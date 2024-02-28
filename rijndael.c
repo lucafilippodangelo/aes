@@ -4,6 +4,7 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 // TODO: Any other files you need to include should go here
 
 #include "rijndael.h"
@@ -55,14 +56,31 @@ unsigned char *expand_key(unsigned char *cipher_key) {
   return 0;
 }
 
+int addNumbers() {
+
+
+
+
+    return 3;
+}
+
 /*
  * The implementations of the functions declared in the
  * header file should go here
  */
 unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
   // TODO: Implement me!
+
+	int x = 2;
+	int* y = &x;
+int c = addNumbers();
+
+printf("%d\n", c);
+
   unsigned char *output =
       (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
+
+
   return output;
 }
 
