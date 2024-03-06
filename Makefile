@@ -4,7 +4,7 @@ CC ?= cc
 all: main rijndael.so
 
 main: rijndael.o main.c
-	$(CC) -o main main.c rijndael.o
+	$(CC) -o main -g main.c rijndael.o
 
 rijndael.o: rijndael.c rijndael.h
 	$(CC) -o rijndael.o -fPIC -c rijndael.c

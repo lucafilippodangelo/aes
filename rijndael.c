@@ -5,6 +5,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 // TODO: Any other files you need to include should go here
 
 #include "rijndael.h"
@@ -13,7 +14,7 @@
  * Operations used when encrypting a block
  */
 void sub_bytes(unsigned char *block) {
-  // TODO: Implement me!
+    strcpy(block, "Hello, world");
 }
 
 void shift_rows(unsigned char *block) {
