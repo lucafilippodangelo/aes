@@ -71,16 +71,16 @@ void shift_rows(unsigned char *block) {
     }
 
     unsigned char temp;
-    // Row 1: No change
+    //LD there is a fancy implementation here https://github.com/m3y54m/aes-in-c#aes-operations-subbytes-shiftrow-mixcolumn-and-addroundkey
 
- // Row 2: Circular shift to the left by 1 byte
+    //LD Row 2: Circular shift to the left by 1 byte
     temp = block[4];
     block[4] = block[5];
     block[5] = block[6];
     block[6] = block[7];
     block[7] = temp;
 
-    // Row 3: Circular shift to the left by 2 bytes
+    //LD Row 3: Circular shift to the left by 2 bytes
     temp = block[8];
     block[8] = block[10];
     block[10] = temp;
@@ -89,7 +89,7 @@ void shift_rows(unsigned char *block) {
     block[9] = block[11];
     block[11] = temp;
 
-    // Row 4: Circular shift to the left by 3 bytes
+    //LD Row 4: Circular shift to the left by 3 bytes
     temp = block[12];
     block[12] = block[15];
     block[15] = block[14];
@@ -97,7 +97,7 @@ void shift_rows(unsigned char *block) {
     block[13] = temp;
 
     printf("--- \n");
-    printf("--- LD shift_rows hexadecimal of returned from sub_bytes:\n");
+    printf("--- LD shift_rows hexadecimal of return:\n");
     for (int i = 0; i < 16; i++) {
         printf("%02X ", block[i]);
         if ((i + 1) % 4 == 0)
