@@ -39,7 +39,7 @@ void sub_bytes(unsigned char *block) {
     //strcpy(block, "Hello, world");
 
     // printf("--- \n");
-    // printf("--- LD hexadecimal of the input:\n");
+    // printf("--- LD sub_bytes hexadecimal of the input:\n");
     // for (int i = 0; i < 16; i++) {
     //     printf("%02X ", block[i]); 
     //     if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
@@ -52,7 +52,7 @@ void sub_bytes(unsigned char *block) {
     }
 
     // printf("--- \n");
-    // printf("--- LD hexadecimal of returned from sub_bytes:\n");
+    // printf("--- LD sub_bytes hexadecimal of returned from sub_bytes:\n");
     // for (int i = 0; i < 16; i++) {
     //     printf("%02X ", block[i]);
     //     if ((i + 1) % 4 == 0)
@@ -61,7 +61,48 @@ void sub_bytes(unsigned char *block) {
 }
 
 void shift_rows(unsigned char *block) {
-  // TODO: Implement me!
+    
+    printf("--- \n");
+    printf("--- LD shift_rows hexadecimal of the input:\n");
+    for (int i = 0; i < 16; i++) {
+        printf("%02X ", block[i]); 
+        if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
+            printf("\n");
+    }
+
+    unsigned char temp;
+    // Row 1: No change
+
+ // Row 2: Circular shift to the left by 1 byte
+    temp = block[4];
+    block[4] = block[5];
+    block[5] = block[6];
+    block[6] = block[7];
+    block[7] = temp;
+
+    // Row 3: Circular shift to the left by 2 bytes
+    temp = block[8];
+    block[8] = block[10];
+    block[10] = temp;
+
+    temp = block[9];
+    block[9] = block[11];
+    block[11] = temp;
+
+    // Row 4: Circular shift to the left by 3 bytes
+    temp = block[12];
+    block[12] = block[15];
+    block[15] = block[14];
+    block[14] = block[13];
+    block[13] = temp;
+
+    printf("--- \n");
+    printf("--- LD shift_rows hexadecimal of returned from sub_bytes:\n");
+    for (int i = 0; i < 16; i++) {
+        printf("%02X ", block[i]);
+        if ((i + 1) % 4 == 0)
+            printf("\n");
+    }
 }
 
 void mix_columns(unsigned char *block) {

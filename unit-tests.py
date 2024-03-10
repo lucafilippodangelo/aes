@@ -10,14 +10,7 @@ def generate_random_plaintext(length):
 
 class AesTestMethods(unittest.TestCase):
 
-    # def test_sample_test(self):
-    #     block = ctypes.create_string_buffer(1024)
-    #     rijndael.sub_bytes(block)
-    #     stringValue = str(block.raw)
-    #     print(stringValue)
-    #     self.assertTrue(stringValue.startswith("b'Hello, world"))
-
-    #@unittest.skip("LD SKIP test_sub_bytes")
+    @unittest.skip("LD SKIP test_sub_bytes")
     def test_sub_bytes(self):
         plaintext = bytearray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]) #LD using same input
         #LD need to convert because expecting an int or an immutable sequence of bytes
@@ -28,7 +21,7 @@ class AesTestMethods(unittest.TestCase):
 
         print("--- UT PASSED  test_sub_bytes")
 
-    #@unittest.skip("LD SKIP")
+    @unittest.skip("LD SKIP")
     def test_both_sub_bytes(self):
         num_attempts = 0
         for _ in range(3):
@@ -60,6 +53,21 @@ class AesTestMethods(unittest.TestCase):
 
         print(f"--- UT PASSED test_both_sub_bytes with {num_attempts} attempts")
         print(f"")
+
+    ############################################################################################################
+    ############################################################################################################
+    ############################################################################################################
+
+    #@unittest.skip("LD SKIP test_shift_rows")
+    def test_shift_rows(self):
+        plaintext = bytearray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]) 
+        #LD need to convert because expecting an int or an immutable sequence of bytes
+        block = ctypes.create_string_buffer(bytes(plaintext)) #LD creating a buffer here
+        rijndael.shift_rows(block)
+        expected_output = bytearray([0x01, 0x02, 0x03, 0x04, 0x06, 0x07, 0x08, 0x05, 0x0B, 0x0C, 0x09, 0x0A, 0x10, 0x0D, 0x0E, 0x0F])
+        self.assertEqual(block.raw[:-1], expected_output)#LD Asserting the match. I did exclude the null terminator "[:-1]". 
+
+        print("--- UT PASSED  test_shift_rows")
 
 if __name__ == '__main__':
     unittest.main()
