@@ -12,6 +12,9 @@ rijndael.o: rijndael.c rijndael.h
 rijndael.so: rijndael.o
 	$(CC) -o rijndael.so -shared rijndael.o
 
+aes.so: aes.py
+	python3 -m py_compile aes.py
+
 clean:
 	rm -f *.o *.so
 	rm -f main

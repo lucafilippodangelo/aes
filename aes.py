@@ -58,6 +58,11 @@ def sub_bytes(s):
         for j in range(4):
             s[i][j] = s_box[s[i][j]]
 
+def sub_bytes_ld(s):
+    for i in range(4):
+        for j in range(4):
+            s[i][j] = s_box[s[i][j]]
+    return s #LD just a clone with return of "def sub_bytes(s):" for testing purposes        
 
 def inv_sub_bytes(s):
     for i in range(4):
