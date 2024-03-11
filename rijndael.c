@@ -9,6 +9,7 @@
 // TODO: Any other files you need to include should go here
 #include "rijndael.h"
 
+#define xtime(a) ((((a) << 1) ^ (((a) & 0x80) ? 0x1B : 0x00)) & 0xFF)
 
 // LD will be used across this CA
 const unsigned char s_box[256] = {
@@ -62,13 +63,13 @@ void sub_bytes(unsigned char *block) {
 
 void shift_rows(unsigned char *block) {
     
-    printf("--- \n");
-    printf("--- LD shift_rows hexadecimal of the input:\n");
-    for (int i = 0; i < 16; i++) {
-        printf("%02X ", block[i]); 
-        if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
-            printf("\n");
-    }
+    // printf("--- \n");
+    // printf("--- LD shift_rows hexadecimal of the input:\n");
+    // for (int i = 0; i < 16; i++) {
+    //     printf("%02X ", block[i]); 
+    //     if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
+    //         printf("\n");
+    // }
 
     unsigned char temp;
     //LD there is a fancy implementation here https://github.com/m3y54m/aes-in-c#aes-operations-subbytes-shiftrow-mixcolumn-and-addroundkey
@@ -96,17 +97,50 @@ void shift_rows(unsigned char *block) {
     block[14] = block[13];
     block[13] = temp;
 
-    printf("--- \n");
-    printf("--- LD shift_rows hexadecimal of return:\n");
-    for (int i = 0; i < 16; i++) {
-        printf("%02X ", block[i]);
-        if ((i + 1) % 4 == 0)
-            printf("\n");
-    }
+    // printf("--- \n");
+    // printf("--- LD shift_rows hexadecimal of return:\n");
+    // for (int i = 0; i < 16; i++) {
+    //     printf("%02X ", block[i]);
+    //     if ((i + 1) % 4 == 0)
+    //         printf("\n");
+    // }
+}
+
+//LD trying to use exact same approach of aes.py
+void mix_single_column(unsigned char *a) {
+    unsigned char t = a[0] ^ a[1] ^ a[2] ^ a[3];
+    unsigned char u = a[0];
+
+    a[0] ^= t ^ xtime(a[0] ^ a[1]);
+    a[1] ^= t ^ xtime(a[1] ^ a[2]);
+    a[2] ^= t ^ xtime(a[2] ^ a[3]);
+    a[3] ^= t ^ xtime(a[3] ^ u);
 }
 
 void mix_columns(unsigned char *block) {
-  // TODO: Implement me!
+  //LD resource: https://github.com/m3y54m/aes-in-c#aes-operations-subbytes-shiftrow-mixcolumn-and-addroundkey
+  //LD resource: https://cnj.atu.edu.iq/wp-content/uploads/2019/10/8.pdf
+
+    printf("--- \n");
+    printf("--- LD mix_columns hexadecimal of the input:\n");
+    for (int i = 0; i < 16; i++) {
+        printf("%02X ", block[i]); 
+        if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
+            printf("\n");
+    }
+
+      for (int i = 0; i < 4; i++) {
+        mix_single_column(block + 4 * i);
+    }
+
+    printf("--- \n");
+    printf("--- LD mix_columns OUTPUT hexadecimal\n");
+    for (int i = 0; i < 16; i++) {
+        printf("%02X ", block[i]); 
+        if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
+            printf("\n");
+    }
+
 }
 
 /*

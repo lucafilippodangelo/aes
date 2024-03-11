@@ -110,7 +110,11 @@ def mix_columns(s):
     for i in range(4):
         mix_single_column(s[i])
 
-
+def mix_columns_ld(s):
+    for i in range(4):
+        mix_single_column(s[i])
+    return s
+    
 def inv_mix_columns(s):
     # see Sec 4.1.3 in The Design of Rijndael
     for i in range(4):
