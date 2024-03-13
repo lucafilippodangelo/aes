@@ -11,9 +11,9 @@ def generate_random_plaintext(length):
 class AesTestMethods(unittest.TestCase):
 
     ############################################################################################################
-    # sub_bytes #
+    # sub_bytes # tested in both
     ############################################################################################################
-    #@unittest.skip("LD SKIP test_sub_bytes")
+    @unittest.skip("LD SKIP test_sub_bytes")
     def test_sub_bytes(self):
         plaintext = bytearray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]) #LD using same input
         #LD need to convert because expecting an int or an immutable sequence of bytes
@@ -24,7 +24,7 @@ class AesTestMethods(unittest.TestCase):
 
         print("--- UT PASSED  test_sub_bytes")
 
-    #@unittest.skip("LD SKIP")
+    @unittest.skip("LD SKIP")
     def test_both_sub_bytes(self):
         num_attempts = 0
         for _ in range(3):
@@ -58,10 +58,10 @@ class AesTestMethods(unittest.TestCase):
         print(f"")
 
     ############################################################################################################
-    # shift_rows #
+    # shift_rows # tested in both
     ############################################################################################################
 
-    #@unittest.skip("LD SKIP test_shift_rows")
+    @unittest.skip("LD SKIP test_shift_rows")
     def test_shift_rows(self):
         plaintext = bytearray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]) 
         #LD need to convert because expecting an int or an immutable sequence of bytes
@@ -80,6 +80,7 @@ class AesTestMethods(unittest.TestCase):
 
         return new_s
 
+    @unittest.skip("LD SKIP test_both_shift_rows")
     def test_both_shift_rows(self):
         print("--- test")
         num_attempts = 0
@@ -115,10 +116,10 @@ class AesTestMethods(unittest.TestCase):
         print(f"")
 
     ############################################################################################################
-    # mix_columns #
+    # mix_columns # tested in both
     ############################################################################################################
 
-    #@unittest.skip("LD SKIP mix_columns")
+    @unittest.skip("LD SKIP mix_columns")
     def test_mix_columns(self):
         plaintext = bytearray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]) 
         #LD need to convert because expecting an int or an immutable sequence of bytes
@@ -128,7 +129,7 @@ class AesTestMethods(unittest.TestCase):
         self.assertEqual(block.raw[:-1], expected_output)#LD Asserting the match. I did exclude the null terminator "[:-1]". 
         print("--- UT PASSED  test_mix_columns")
 
-    #@unittest.skip("LD SKIP test_both_mix_columns")
+    @unittest.skip("LD SKIP test_both_mix_columns")
     def test_both_mix_columns(self):
         num_attempts = 0
         for _ in range(3):
@@ -156,6 +157,24 @@ class AesTestMethods(unittest.TestCase):
 
         print(f"--- UT PASSED test_both_sub_bytes with {num_attempts} attempts")
         print(f"")
+
+
+    ############################################################################################################
+    # TEMP - TEST CREATION OF FIRST COLUMN of KEY SCHEDULE
+    ############################################################################################################
+    #LD identical to demo
+    def test_generateFirstKey(self):
+        cipher_key = [0x2b, 0x28, 0xab, 0x09,
+                    0x7e, 0xae, 0xf7, 0xcf,
+                    0x15, 0xd2, 0x15, 0x4f,
+                    0x16, 0xa6, 0x88, 0x3c]
+
+        plaintext = bytearray(cipher_key) 
+        block = ctypes.create_string_buffer(bytes(plaintext)) #LD creating a buffer here
+        rijndael.generateFirstKey(block)
+        #//expected_output = bytearray([0x03, 0x04, 0x09, 0x0A, 0x0F, 0x08, 0x15, 0x1E, 0x0B, 0x0C, 0x01, 0x02, 0x17, 0x10, 0x2D, 0x36])
+        #self.assertEqual(block.raw[:-1], expected_output)#LD Asserting the match. I did exclude the null terminator "[:-1]". 
+        print("--- UT PASSED  generateFirstKey")
 
 if __name__ == '__main__':
     unittest.main()

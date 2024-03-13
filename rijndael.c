@@ -31,7 +31,13 @@ const unsigned char s_box[256] = {
     0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
 };
 
-
+//LD using exact same round constants in "aes.py"
+const unsigned char r_con[40] = {
+    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
 
 /*
  * Operations used when encrypting a block
@@ -170,17 +176,163 @@ void add_round_key(unsigned char *block, unsigned char *round_key) {
  * which is a single 128-bit key, it should return a 176-byte
  * vector, containing the 11 round keys one after the other
  */
-unsigned char *expand_key(unsigned char *cipher_key) {
-  // TODO: Implement me!
-  return 0;
+/*
+* LD I will take a different approach than in "aes.py". What probably done there is a "RotWord" left shift.
+* instead I want to implement it exactly as explained in lecture by Eoin. End result of UT I will implement must be same
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+
+//LD perform RotWord on cipherKey and update word
+void RotWord(unsigned char *word, const unsigned char cipherKey[]) {
+    word[2] = cipherKey[15];
+    word[3] = cipherKey[3];
+    word[0] = cipherKey[7];
+    word[1] = cipherKey[11];
 }
 
-/*
-LD test function
-*/
-// int addNumbers() {
-//     return 3;
+//LD subbites on the column in isulation
+void SubBytes(unsigned char *word) {
+            for (int i = 0; i < 4; i += 1) {
+                printf("here-> ");
+                printf("%02x ", word[i]);
+
+                unsigned char index = word[i]; //LD getting index of s_box for byte "i" I'm looping on
+                word[i] = s_box[index];//LD swap original byte with value from the s_box
+            }
+}
+
+//LD get's in input the column to extract
+void ldExtractColumnFromRcon(int columnNumber, unsigned char *word) {
+    for (int i = 0; i < 4; i++) {
+        word[i] = r_con[(columnNumber - 1) + i * 10];
+    }
+}
+
+void ldExtractColumnFromKey(int columnNumber, unsigned char *key, unsigned char *word) {
+    for (int i = 0; i < 4; i++) {
+        word[i] = key[(columnNumber - 1) + i * 4];
+    }
+}
+
+//LD XOR in isulation (between 3 inputs)
+void XOR(unsigned char *result, unsigned char *a, unsigned char *b, unsigned char *c) {
+    for (int i = 0; i < 4; i++) {
+        result[i] = a[i] ^ b[i] ^ c[i];
+    }
+}
+
+//LD XOR in isulation (between 2 inputs)
+void XOR_2(unsigned char *result, unsigned char *a, unsigned char *b) {
+    for (int i = 0; i < 4; i++) {
+        result[i] = a[i] ^ b[i];
+    }
+}
+
+//LD for now making working the generation of the first KEY SCHEDULE
+//------
+//- calculation column 1
+//create a temp temp_calc_1 of size 4 char and save there the Rotword of column 4(index 3,7,11,15) of the 
+//CHEAPERKEY, do subbytes and update same temp_calc_1.
+//------
+//get column 1(index 0,4,8,12) of the CHEAPERKEY and save in temp_calc_2
+//get column ONE of Rcon(index 0,11,21,31) and save in temp_calc_3
+//XOR of temp_calc_1-temp_calc_2-temp_calc_3 and save in temp_calc_4
+//col 1 of FIRST KEY will be temp_calc_4
+//------
+//-  calculation column 2
+//col 2 is the xor of col2 of current input with col 1 just calculated
+//-  calculation column 3
+//col 3 is the xor of col3 of current input with col 2 just calculated
+//-  calculation column 4
+//col 4 is the xor of col4 of current input with col 3 just calculated
+
+unsigned char *generateFirstKey(unsigned char *cipher_key) {   
+
+    unsigned char *expanded_key = malloc(176 * sizeof(unsigned char));
+
+    unsigned char temp_calc_1[4]; //LD will contain Rotword of column 4 of cipher_key (index 3,7,11,15), then the subbytes
+    unsigned char temp_calc_2[4];
+    unsigned char temp_calc_3[4];
+    unsigned char temp_calc_4[4];
+    
+    //LD ROTWORD
+    RotWord(temp_calc_1, cipher_key); //LD expected result 3c 09 cf af
+    printf("After rotation and stored in temp_calc_1:\n");
+    for (int i = 0; i < 4; i++) {
+        printf("%02x ", temp_calc_1[i]);
+    }
+    printf("\n");
+
+    //LD SUBBYTES
+    SubBytes(temp_calc_1); //LD expected result 8a 84 eb 01
+    printf("After subbytes in temp_calc_1:\n");
+    for (int i = 0; i < 4; i++) {
+        printf("%02x ", temp_calc_1[i]);
+    }
+    printf("\n");
+
+    //LD extract the first column form the key
+    ldExtractColumnFromKey(1, cipher_key, temp_calc_2); 
+    printf("Column 1 of the cipher key: ");
+    for (int i = 0; i < 4; i++) {
+        printf("%02x ", temp_calc_2[i]);
+    }
+    printf("\n");
+
+    //LD extracting the X number column. Can be reused. At the moment extracting column number one
+    ldExtractColumnFromRcon(1, temp_calc_3); 
+    printf("Column %d of the r_con array: ", 1);
+    for (int i = 0; i < 4; i++) {
+        printf("%02x ", temp_calc_3[i]);
+    }
+    printf("\n");
+
+    XOR(temp_calc_4, temp_calc_1, temp_calc_2, temp_calc_3);//LD expected a0 fa fe 17 
+
+        printf("Result of XOR FOR COLUMN ONE: ");
+        for (int i = 0; i < 4; i++) {
+            printf("%02x ", temp_calc_4[i]);
+        }
+        printf("\n");
+
+    //LD MAKING OF COL 2. COL 2 is the XOR of col2 of key in input with col 1 just calculated
+    unsigned char temp_columnExtractedFromKey[4];
+    ldExtractColumnFromKey(2, cipher_key, temp_columnExtractedFromKey); //LD extract column one
+    unsigned char temp_col2[4];
+    XOR_2(temp_col2, temp_columnExtractedFromKey, temp_calc_4);
+    printf("Result of XOR FOR COLUMN TWO: ");
+    for (int i = 0; i < 4; i++) { printf("%02x ", temp_col2[i]); } printf("\n"); //LD expected 88 54 2c b1 
+
+    //LD MAKING OF COL 3. COL 3 is the XOR of col3 of key in input with col 2 just calculated
+    ldExtractColumnFromKey(3, cipher_key, temp_columnExtractedFromKey); //LD extract column one
+    unsigned char temp_col3[4];
+    XOR_2(temp_col3, temp_columnExtractedFromKey, temp_col2);
+    printf("Result of XOR FOR COLUMN THREE: ");
+    for (int i = 0; i < 4; i++) { printf("%02x ", temp_col3[i]); } printf("\n"); //LD expected
+
+
+    //LD MAKING OF COL 4. COL 4 is the XOR of col4 of key in input with col 3 just calculated
+    ldExtractColumnFromKey(4, cipher_key, temp_columnExtractedFromKey); //LD extract column one
+    unsigned char temp_col4[4];
+    XOR_2(temp_col4, temp_columnExtractedFromKey, temp_col3);
+    printf("Result of XOR FOR COLUMN FOUR: ");
+    for (int i = 0; i < 4; i++) { printf("%02x ", temp_col4[i]); } printf("\n"); //LD expected
+
+
+    return expanded_key;
+}
+
+
+
+
+//Eoin complete one
+// unsigned char *expand_key(unsigned char *cipher_key) {   
+//     return expanded_key;
 // }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
  * The implementations of the functions declared in the
