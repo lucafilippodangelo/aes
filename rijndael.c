@@ -286,21 +286,15 @@ void XOR_2(unsigned char *result, unsigned char *a, unsigned char *b) {
 unsigned char *expand_key(unsigned char *cipher_key)
 {
     unsigned char *expanded_key = malloc(176 * sizeof(unsigned char));
-    if (expanded_key == NULL) {
-    fprintf(stderr, "LD MEMORY ALLOCATION FAILURE\n");
-    exit(EXIT_FAILURE);
-}
-
     //printf("LD print input cipher_ke:\n");
     //ld_print_128bit_block(cipher_key);
 
     // LD https://www.quora.com/Is-malloc-initializing-allocated-array-to-zero-C-initialization-malloc-development
-    // for (int i = 0; i < 176; i++)
-    // {
-    //     expanded_key[i] = 0;
-    // }
-
-    //LD input chiper key is the first key
+    for (int i = 0; i < 176; i++)
+    {
+        expanded_key[i] = 0;
+    }
+    // Copy Cipher Key as the first key in the Expanded Key
     for (int i = 0; i < 16; i++)
     {
         expanded_key[i] = cipher_key[i];
@@ -360,11 +354,8 @@ unsigned char *expand_key(unsigned char *cipher_key)
             expanded_key[z] = temp_col4[j];
         }
     }
-    printf("-");
-    printf("LD FINAL RESULT:\n");
-    print_hex_array(expanded_key, 176);
-
-    //free(expanded_key); //LD will free memory after that the caller will receive "expanded_key" 
+    //printf("Expanded Keys:\n");
+    //print_hex_array(expanded_key, 176);
     return expanded_key;
 }
 
