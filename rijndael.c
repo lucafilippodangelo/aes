@@ -300,7 +300,7 @@ unsigned char *expand_key(unsigned char *cipher_key)
     //     expanded_key[i] = 0;
     // }
 
-    // Copy Cipher Key as the first key in the Expanded Key
+    //LD input chiper key is the first key
     for (int i = 0; i < 16; i++)
     {
         expanded_key[i] = cipher_key[i];

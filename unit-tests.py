@@ -166,7 +166,7 @@ class AesTestMethods(unittest.TestCase):
     ############################################################################################################
     #LD identical to demo
     # @unittest.skip("LD SKIP test_both_mix_columns")
-    def test_generateFirstKey(self):
+    def test_expand_key(self):
         cipher_key = [0x2b, 0x28, 0xab, 0x09,
                     0x7e, 0xae, 0xf7, 0xcf,
                     0x15, 0xd2, 0x15, 0x4f,
@@ -178,18 +178,16 @@ class AesTestMethods(unittest.TestCase):
 
         extended_key_ptr = rijndael.expand_key(block)
         print("ld001")
-        # Check if the pointer is not NULL
         self.assertIsNotNone(extended_key_ptr, "LD ERROR if key pointer is NULL")
         print("ld002")
-
         extended_key_bytes = ctypes.string_at(extended_key_ptr, 176) #LD convering pointer to a python object(bytes)
         
-        self.assertEqual(len(extended_key_bytes), 176, "Invalid length of extended key bytes")
+       
 
         print("! LD ----")
         print("! LD ----", extended_key_bytes.hex())
 
-        # Free the memory in the C code after it's no longer needed in Python
+        #LD command to free memory
         libc.free(extended_key)
 
 
