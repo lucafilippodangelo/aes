@@ -159,25 +159,35 @@ void mix_columns(unsigned char *block) {
   //LD resource: https://github.com/m3y54m/aes-in-c#aes-operations-subbytes-shiftrow-mixcolumn-and-addroundkey
   //LD resource: https://cnj.atu.edu.iq/wp-content/uploads/2019/10/8.pdf
 
-    printf("--- \n");
-    printf("--- LD mix_columns hexadecimal of the input:\n");
-    for (int i = 0; i < 16; i++) {
-        printf("%02X ", block[i]); 
-        if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
-            printf("\n");
+    // printf("--- \n");
+    // printf("--- LD mix_columns hexadecimal of the input:\n");
+    // for (int i = 0; i < 16; i++) {
+    //     printf("%02X ", block[i]); 
+    //     if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
+    //         printf("\n");
+    // }
+
+    unsigned char column[4];
+
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            column[j] = block[i + 4 * j];
+        }
+
+        mix_single_column(column);
+
+        for (int j = 0; j < 4; j++) {
+            block[i + 4 * j] = column[j];
+        }
     }
 
-      for (int i = 0; i < 4; i++) {
-        mix_single_column(block + 4 * i);
-    }
-
-    printf("--- \n");
-    printf("--- LD mix_columns OUTPUT hexadecimal\n");
-    for (int i = 0; i < 16; i++) {
-        printf("%02X ", block[i]); 
-        if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
-            printf("\n");
-    }
+    // printf("--- \n");
+    // printf("--- LD mix_columns OUTPUT hexadecimal\n");
+    // for (int i = 0; i < 16; i++) {
+    //     printf("%02X ", block[i]); 
+    //     if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
+    //         printf("\n");
+    // }
 
 }
 
@@ -392,26 +402,40 @@ unsigned char *expand_key(unsigned char *cipher_key)
  * header file should go here
  */
 unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
-  // TODO: Implement me!
 
-	// int x = 2;
-	// int* y = &x;
-  // int c = addNumbers();
+    unsigned char *output = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
 
-  // printf("%d\n", c);
+    unsigned char *round_keys = expand_key(key);
 
-  //LD call sub_bytes
-  sub_bytes(plaintext);
+    add_round_key(plaintext, round_keys);
 
-  unsigned char *output =
-      (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
+    for (int round = 1; round < 10; ++round) {
+        sub_bytes(plaintext);
+        shift_rows(plaintext);
+        mix_columns(plaintext);
+        add_round_key(plaintext, round_keys + round * BLOCK_SIZE); //LD advancing the pointer by blocksize
+    }
 
-  return output;
+    sub_bytes(plaintext);
+    shift_rows(plaintext);
+    add_round_key(plaintext, round_keys + 10 * BLOCK_SIZE);
+
+    memcpy(output, plaintext, BLOCK_SIZE);
+
+    free(round_keys); //LD release allocated memory
+
+    printf("--- \n");
+    printf("--- LD full ENCRIPTION output:\n");
+    for (int i = 0; i < 16; i++) {
+        printf("%02X ", output[i]); 
+        if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
+            printf("\n");
+    }
+    return output;
 }
 
 unsigned char *aes_decrypt_block(unsigned char *ciphertext, unsigned char *key) {
-  // TODO: Implement me!
-  unsigned char *output =
-      (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
+  
+  unsigned char *output = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
   return output;
 }

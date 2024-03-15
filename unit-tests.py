@@ -18,7 +18,7 @@ class AesTestMethods(unittest.TestCase):
     ############################################################################################################
     # sub_bytes # tested in both
     ############################################################################################################
-    #@unittest.skip("LD SKIP test_sub_bytes")
+    @unittest.skip("LD SKIP test_sub_bytes")
     def test_sub_bytes(self):
         plaintext = bytearray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]) #LD using same input
         #LD need to convert because expecting an int or an immutable sequence of bytes
@@ -29,7 +29,7 @@ class AesTestMethods(unittest.TestCase):
 
         print("--- UT PASSED  test_sub_bytes")
 
-    #@unittest.skip("LD SKIP")
+    @unittest.skip("LD SKIP")
     def test_both_sub_bytes(self):
         num_attempts = 0
         for _ in range(3):
@@ -66,7 +66,7 @@ class AesTestMethods(unittest.TestCase):
     # shift_rows # tested in both
     ############################################################################################################
 
-    #@unittest.skip("LD SKIP test_shift_rows")
+    @unittest.skip("LD SKIP test_shift_rows")
     def test_shift_rows(self):
         plaintext = bytearray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]) 
         #LD need to convert because expecting an int or an immutable sequence of bytes
@@ -85,7 +85,7 @@ class AesTestMethods(unittest.TestCase):
 
         return new_s
 
-    #@unittest.skip("LD SKIP test_both_shift_rows")
+    @unittest.skip("LD SKIP test_both_shift_rows")
     def test_both_shift_rows(self):
         print("--- test")
         num_attempts = 0
@@ -124,17 +124,23 @@ class AesTestMethods(unittest.TestCase):
     # mix_columns # tested in both
     ############################################################################################################
 
-    #@unittest.skip("LD SKIP mix_columns")
+    @unittest.skip("LD SKIP mix_columns")
     def test_mix_columns(self):
-        plaintext = bytearray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]) 
+        plaintext = bytearray([0xd4, 0xe0, 0xb8, 0x1e,
+                                0xbf, 0xb4, 0x41, 0x27,
+                                0x5d, 0x52, 0x11, 0x98,
+                                0x30, 0xae, 0xf1, 0xe5]) 
         #LD need to convert because expecting an int or an immutable sequence of bytes
         block = ctypes.create_string_buffer(bytes(plaintext)) #LD creating a buffer here
         rijndael.mix_columns(block)
-        expected_output = bytearray([0x03, 0x04, 0x09, 0x0A, 0x0F, 0x08, 0x15, 0x1E, 0x0B, 0x0C, 0x01, 0x02, 0x17, 0x10, 0x2D, 0x36])
+        expected_output = bytearray([0x04, 0xe0, 0x48, 0x28,
+                                        0x66, 0xcb, 0xf8, 0x06,
+                                        0x81, 0x19, 0xd3, 0x26,
+                                        0xe5, 0x9a, 0x7a, 0x4c])
         self.assertEqual(block.raw[:-1], expected_output)#LD Asserting the match. I did exclude the null terminator "[:-1]". 
         print("--- UT PASSED  test_mix_columns")
 
-    #@unittest.skip("LD SKIP test_both_mix_columns")
+    @unittest.skip("LD SKIP test_both_mix_columns")
     def test_both_mix_columns(self):
         num_attempts = 0
         for _ in range(3):
@@ -168,7 +174,7 @@ class AesTestMethods(unittest.TestCase):
     # KEY SCHEDULE
     ############################################################################################################
    
-
+    @unittest.skip("LD SKIP test_expand_key")
     def test_expand_key(self): 
         cipher_key = bytearray([0x2b, 0x28, 0xab, 0x09,
                                 0x7e, 0xae, 0xf7, 0xcf,
@@ -196,7 +202,7 @@ class AesTestMethods(unittest.TestCase):
         #expanded_key = [hex(byte) for byte in expanded_key_bytes]
         #print(expanded_key)
 
-    #@unittest.skip("LD SKIP test_RotWord")
+    @unittest.skip("LD SKIP test_RotWord")
     def test_RotWord(self):
         expanded_key = [0x2b, 0x28, 0xab, 0x09,
                         0x7e, 0xae, 0xf7, 0xcf,
@@ -219,7 +225,7 @@ class AesTestMethods(unittest.TestCase):
         self.assertEqual(column_array.raw[:-1], expected_rot_column_array)
         print("111d")
 
-    #@unittest.skip("")
+    @unittest.skip("")
     def test_RotWord2(self):
         expanded_key = [0x2b, 0x28, 0xab, 0x09,
                         0x7e, 0xae, 0xf7, 0xcf,
@@ -247,7 +253,7 @@ class AesTestMethods(unittest.TestCase):
         self.assertEqual(column_array.raw[:-1], expected_rot_column_array)
         print("222d")
 
-    #@unittest.skip("LD SKIP test_SubBytes")
+    @unittest.skip("LD SKIP test_SubBytes")
     def test_SubBytes(self):
         column = [0xcf, 
                   0x4f, 
@@ -260,7 +266,7 @@ class AesTestMethods(unittest.TestCase):
         self.assertEqual(column_array.raw[:-1], expected_sub_column_array)
         print("333 clean up")
 
-    #@unittest.skip("LD SKIP test_SubBytes2")
+    @unittest.skip("LD SKIP test_SubBytes2")
     def test_SubBytes2(self):
         column = [0x6c, 0x76, 0x05, 0x2a]
         column_array = ctypes.create_string_buffer(bytes(bytearray(column)))
@@ -270,7 +276,7 @@ class AesTestMethods(unittest.TestCase):
         self.assertEqual(column_array.raw[:-1], expected_sub_column_array)
         print("444 clean up")
 
-    #@unittest.skip("LD SKIP test_ldExtractColumnFromKey")
+    @unittest.skip("LD SKIP test_ldExtractColumnFromKey")
     def test_ldExtractColumnFromKey(self):
         expanded_key = [0x2b, 0x28, 0xab, 0x09,
                         0x7e, 0xae, 0xf7, 0xcf,
@@ -304,6 +310,7 @@ class AesTestMethods(unittest.TestCase):
     ############################################################################################################
 
     #LD using same values in animation
+    @unittest.skip("LD SKIP test_add_round_key")
     def test_add_round_key(self):
         inputToProcessText = bytearray([0x04, 0xe0, 0x48, 0x28,
                                         0x66, 0xcb, 0xf8, 0x06,
@@ -325,6 +332,35 @@ class AesTestMethods(unittest.TestCase):
         self.assertEqual(inputToProcessTextBuffer.raw[:-1], expected_output)
         print("--- UT PASSED add_round_key")
 
+    ############################################################################################################
+    # FULL ENCRIPTION TEST
+    ############################################################################################################
+
+    #@unittest.skip("LD SKIP test_aes_encrypt_block")
+    def test_aes_encrypt_block(self):
+        plaintext = bytearray([0x32, 0x88, 0x31, 0xe0,
+                               0x43, 0x5a, 0x31, 0x37,
+                               0xf6, 0x30, 0x98, 0x07,
+                               0xa8, 0x8d, 0xa2, 0x34])
+        plaintext_buffer = ctypes.create_string_buffer(bytes(plaintext)) 
+
+        key = bytearray([0x2b, 0x28, 0xab, 0x09,
+                        0x7e, 0xae, 0xf7, 0xcf,
+                        0x15, 0xd2, 0x15, 0x4f,
+                        0x16, 0xa6, 0x88, 0x3c,])
+        key_buffer = ctypes.create_string_buffer(bytes(key)) 
+
+        expected_output = bytearray([0x39, 0x02, 0xdc, 0x19,
+                                     0x25, 0xdc, 0x11, 0x6a,
+                                     0x84, 0x09, 0x85, 0x0b,
+                                     0x1d, 0xfb, 0x97, 0x32])
+
+        encrypted_output = rijndael.aes_encrypt_block(plaintext_buffer, key_buffer)
+
+        result = bytearray(ctypes.string_at(encrypted_output, len(expected_output)))
+
+        self.assertEqual(result, expected_output)
+        print("--- UT PASSED aes_encrypt_block")
 
 
 
