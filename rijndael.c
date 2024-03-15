@@ -200,7 +200,28 @@ void invert_mix_columns(unsigned char *block) {
  * This operation is shared between encryption and decryption
  */
 void add_round_key(unsigned char *block, unsigned char *round_key) {
-  // TODO: Implement me!
+    
+    printf("START add_round_key\n");
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            printf("%02x ", block[i * 4 + j]);
+        }
+        printf("\n");
+    }
+
+    for (int i = 0; i < 16; i++) {
+        block[i] ^= round_key[i];
+    }
+
+    printf("----\n");
+
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            printf("%02x ", block[i * 4 + j]);
+        }
+        printf("\n");
+    }
+    printf("END add_round_key\n");
 }
 
 /*

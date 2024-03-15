@@ -169,7 +169,6 @@ class AesTestMethods(unittest.TestCase):
     ############################################################################################################
    
 
-
     def test_expand_key(self): 
         cipher_key = bytearray([0x2b, 0x28, 0xab, 0x09,
                                 0x7e, 0xae, 0xf7, 0xcf,
@@ -196,8 +195,6 @@ class AesTestMethods(unittest.TestCase):
 
         #expanded_key = [hex(byte) for byte in expanded_key_bytes]
         #print(expanded_key)
-
-
 
     #@unittest.skip("LD SKIP test_RotWord")
     def test_RotWord(self):
@@ -300,6 +297,36 @@ class AesTestMethods(unittest.TestCase):
         print("555 clean up")
         self.assertEqual(column_array.raw[:-1], expected_rot_column_array)
         print("555 clean up")
+
+
+    ############################################################################################################
+    # KEY SCHEDULE
+    ############################################################################################################
+
+    #LD using same values in animation
+    def test_add_round_key(self):
+        inputToProcessText = bytearray([0x04, 0xe0, 0x48, 0x28,
+                                        0x66, 0xcb, 0xf8, 0x06,
+                                        0x81, 0x19, 0xd3, 0x26,
+                                        0xe5, 0x9a, 0x7a, 0x4c])
+        inputToProcessTextBuffer = ctypes.create_string_buffer(bytes(inputToProcessText)) 
+
+        cipher_key = bytearray([0xa0, 0x88, 0x23, 0x2a,
+                                0xfa, 0x54, 0xa3, 0x6c,
+                                0xfe, 0x2c, 0x39, 0x76,
+                                0x17, 0xb1, 0x39, 0x05])
+        cipher_key_buffer = ctypes.create_string_buffer(bytes(cipher_key))#LD Converting bytearray -> ctypes object
+
+
+        rijndael.add_round_key(inputToProcessTextBuffer, cipher_key_buffer)
+        print(inputToProcessTextBuffer)
+
+        expected_output = bytearray([0xa4, 0x68, 0x6b, 0x02, 0x9c, 0x9f, 0x5b, 0x6a, 0x7f, 0x35, 0xea, 0x50, 0xf2, 0x2b, 0x43, 0x49])
+        self.assertEqual(inputToProcessTextBuffer.raw[:-1], expected_output)
+        print("--- UT PASSED add_round_key")
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
