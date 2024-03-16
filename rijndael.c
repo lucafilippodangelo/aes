@@ -210,6 +210,10 @@ void shift_rows(unsigned char *block) {
 
 // }
 
+///////
+//LD resource https://github.com/m3y54m/aes-in-c/tree/main/src
+///////
+
 // Function prototype for mixColumn
 void mixColumn(unsigned char *column);
 // Function prototype for invMixColumn
@@ -617,8 +621,15 @@ unsigned char *expand_key(unsigned char *cipher_key)
  */
 unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
 
-    unsigned char *output = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
+    printf("--- \n");
+    printf("--- LD PLAINTEXT aes_encrypt_block:\n");
+    for (int i = 0; i < 16; i++) {
+        printf("%02X ", plaintext[i]); 
+        if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
+            printf("\n");
+    }
 
+    unsigned char *output = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
     unsigned char *round_keys = expand_key(key);
 
     add_round_key(plaintext, round_keys);
@@ -640,20 +651,57 @@ unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
     free(round_keys); //LD release allocated memory
     //printf("LD IN FUNCTION check 002 \n");
 
-    // printf("--- \n");
-    // printf("--- LD full ENCRIPTION output:\n");
-    // for (int i = 0; i < 16; i++) {
-    //     printf("%02X ", output[i]); 
-    //     if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
-    //         printf("\n");
-    // }
+    printf("--- \n");
+    printf("--- LD ENCRIPTED aes_encrypt_block:\n");
+    for (int i = 0; i < 16; i++) {
+        printf("%02X ", output[i]); 
+        if ((i + 1) % 4 == 0)
+            printf("\n");
+    }
     
-    //printf("LD IN FUNCTION check 003 \n");
+    printf("LD EXECUTED aes_encrypt_block \n");
     return output;
 }
 
 unsigned char *aes_decrypt_block(unsigned char *ciphertext, unsigned char *key) {
-  
-  unsigned char *output = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
-  return output;
+
+    printf("--- \n");
+    printf("--- LD CIPHERTEXT aes_decrypt_block:\n");
+    for (int i = 0; i < 16; i++) {
+        printf("%02X ", ciphertext[i]); 
+        if ((i + 1) % 4 == 0)
+            printf("\n");
+    }
+
+    //LD it's exactly all the way around!
+    unsigned char *output = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
+    unsigned char *round_keys = expand_key(key);
+
+    add_round_key(ciphertext, round_keys + 10 * BLOCK_SIZE);
+    invert_shift_rows(ciphertext);
+    invert_sub_bytes(ciphertext);
+
+    for (int round = 9; round > 0; --round) {
+        add_round_key(ciphertext, round_keys + round * BLOCK_SIZE);
+        invert_mix_columns(ciphertext);
+        invert_shift_rows(ciphertext);
+        invert_sub_bytes(ciphertext);
+    }
+
+    add_round_key(ciphertext, round_keys);
+
+    memcpy(output, ciphertext, BLOCK_SIZE);
+
+    free(round_keys);
+
+    printf("--- \n");
+    printf("--- LD DECRIPTED aes_decrypt_block:\n");
+    for (int i = 0; i < 16; i++) {
+        printf("%02X ", output[i]); 
+        if ((i + 1) % 4 == 0)
+            printf("\n");
+    }
+
+    printf("LD EXECUTED aes_decrypt_block \n");
+    return output;
 }
