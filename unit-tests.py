@@ -67,6 +67,52 @@ class AesTestMethods(unittest.TestCase):
         print(f"")
 
     ############################################################################################################
+    # invert_sub_bytes MISSING THE ONE WITH PYTHON
+    ############################################################################################################
+    @unittest.skip("LD SKIP test_invert_sub_bytes")
+    def test_invert_sub_bytes(self):
+        #LD using inverted "bytearray" used in "test_sub_bytes"
+        plaintext = bytearray([0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76, 0xCA])
+        block = ctypes.create_string_buffer(bytes(plaintext))
+        rijndael.invert_sub_bytes(block)
+        expected_output = bytearray([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10])
+        self.assertEqual(block.raw[:-1], expected_output)
+        print("--- UT PASSED  test_invert_sub_bytes")
+
+    @unittest.skip("LD SKIP")
+    def test_both_invert_sub_bytes(self):
+        num_attempts = 0
+        for _ in range(3):
+            num_attempts += 1     
+
+            plaintext = generate_random_plaintext(16) 
+            #plaintext = bytearray([1, 14, 3, 4, 5, 6, 7, 8, 9, 21, 11, 12, 13, 21, 15, 16])
+
+            block = ctypes.create_string_buffer(bytes(plaintext))
+            rijndael.sub_bytes(block)#LD will call the sub_bytes function from C implementation
+
+            expected_output_c = bytes2matrix(block.raw[:-1])#LD Convert the result to a matrix because the method in python gets and returns a matrix
+            #LD looks like print by default display bytes in decimal
+            #for row in expected_output_c:
+                #print([hex(byte) for byte in row])
+            
+            #LD test id same function in python behave the same
+            plaintext_matrix = bytes2matrix(plaintext) #LD convert same input plaintext to a matrix
+            expected_output_python = sub_bytes_ld(plaintext_matrix)  #LD now call sub_bytes from aes.py
+            #print("sub_bytes P:", expected_output_python)
+            #for row in expected_output_python:
+                #print([hex(byte) for byte in row])
+
+            print(f"--- LOOP n. {num_attempts} with hexadecimal: {[hex(byte) for byte in plaintext]}")
+            self.assertEqual(expected_output_c, expected_output_python)
+
+        # Asserting the match between C and Python results
+        #self.assertEqual(expected_output_c, expected_output_python)
+
+        print(f"--- UT PASSED test_both_sub_bytes with {num_attempts} attempts")
+        print(f"")
+
+    ############################################################################################################
     # shift_rows # tested in both
     ############################################################################################################
 
@@ -125,10 +171,23 @@ class AesTestMethods(unittest.TestCase):
         print(f"")
 
     ############################################################################################################
+    # invert_shift_rows # MISSING THE ONE WITH PYTHON
+    ############################################################################################################
+
+    @unittest.skip("LD SKIP test_invert_shift_rows")
+    def test_invert_shift_rows(self):
+        plaintext = bytearray([0x01, 0x02, 0x03, 0x04, 0x06, 0x07, 0x08, 0x05, 0x0B, 0x0C, 0x09, 0x0A, 0x10, 0x0D, 0x0E, 0x0F])
+        block = ctypes.create_string_buffer(bytes(plaintext)) 
+        rijndael.invert_shift_rows(block)
+        expected_output = bytearray([0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10])
+        self.assertEqual(block.raw[:-1], expected_output)
+        print("--- UT PASSED  test_invert_shift_rows")
+
+    ############################################################################################################
     # mix_columns # tested in both
     ############################################################################################################
 
-    @unittest.skip("LD SKIP mix_columns")
+    #@unittest.skip("LD SKIP mix_columns")
     def test_mix_columns(self):
         plaintext = bytearray([0xd4, 0xe0, 0xb8, 0x1e,
                                 0xbf, 0xb4, 0x41, 0x27,
@@ -172,6 +231,25 @@ class AesTestMethods(unittest.TestCase):
 
         print(f"--- UT PASSED test_both_sub_bytes with {num_attempts} attempts")
         print(f"")
+
+    ############################################################################################################
+    # invert_mix_columns # MISSING THE ONE WITH PYTHON
+    ############################################################################################################
+
+    #@unittest.skip("LD SKIP invert_mix_columns")
+    def test_invert_mix_columns(self):
+        plaintext = bytearray([0x04, 0xe0, 0x48, 0x28,
+                                0x66, 0xcb, 0xf8, 0x06,
+                                0x81, 0x19, 0xd3, 0x26,
+                                0xe5, 0x9a, 0x7a, 0x4c])
+        block = ctypes.create_string_buffer(bytes(plaintext))
+        rijndael.invert_mix_columns(block)
+        expected_output = bytearray([0xd4, 0xe0, 0xb8, 0x1e,
+                                    0xbf, 0xb4, 0x41, 0x27,
+                                    0x5d, 0x52, 0x11, 0x98,
+                                    0x30, 0xae, 0xf1, 0xe5]) 
+        self.assertEqual(block.raw[:-1], expected_output) 
+        print("--- UT PASSED  invert_test_mix_columns")
 
 
     ############################################################################################################
@@ -308,9 +386,8 @@ class AesTestMethods(unittest.TestCase):
         self.assertEqual(column_array.raw[:-1], expected_rot_column_array)
         print("555 clean up")
 
-
     ############################################################################################################
-    # KEY SCHEDULE
+    # KEY ADD ROUND KEY
     ############################################################################################################
 
     #LD using same values in animation
@@ -340,7 +417,7 @@ class AesTestMethods(unittest.TestCase):
     # FULL ENCRIPTION TEST
     ############################################################################################################
 
-    #@unittest.skip("LD SKIP test_aes_encrypt_block")
+    @unittest.skip("LD SKIP test_aes_encrypt_block")
     def test_aes_encrypt_block(self):
         plaintext = bytearray([0x32, 0x88, 0x31, 0xe0,
                                0x43, 0x5a, 0x31, 0x37,
