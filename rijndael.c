@@ -211,27 +211,27 @@ void invert_mix_columns(unsigned char *block) {
  */
 void add_round_key(unsigned char *block, unsigned char *round_key) {
     
-    printf("START add_round_key\n");
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            printf("%02x ", block[i * 4 + j]);
-        }
-        printf("\n");
-    }
+    // printf("START add_round_key\n");
+    // for (int i = 0; i < 4; i++) {
+    //     for (int j = 0; j < 4; j++) {
+    //         printf("%02x ", block[i * 4 + j]);
+    //     }
+    //     printf("\n");
+    // }
 
     for (int i = 0; i < 16; i++) {
         block[i] ^= round_key[i];
     }
 
-    printf("----\n");
+    // printf("----\n");
 
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            printf("%02x ", block[i * 4 + j]);
-        }
-        printf("\n");
-    }
-    printf("END add_round_key\n");
+    // for (int i = 0; i < 4; i++) {
+    //     for (int j = 0; j < 4; j++) {
+    //         printf("%02x ", block[i * 4 + j]);
+    //     }
+    //     printf("\n");
+    // }
+    // printf("END add_round_key\n");
 }
 
 /*
@@ -390,11 +390,6 @@ unsigned char *expand_key(unsigned char *cipher_key)
     return expanded_key;
 }
 
-
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
@@ -422,15 +417,19 @@ unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
 
     memcpy(output, plaintext, BLOCK_SIZE);
 
+    //printf("LD IN FUNCTION check 001 \n");
     free(round_keys); //LD release allocated memory
+    //printf("LD IN FUNCTION check 002 \n");
 
-    printf("--- \n");
-    printf("--- LD full ENCRIPTION output:\n");
-    for (int i = 0; i < 16; i++) {
-        printf("%02X ", output[i]); 
-        if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
-            printf("\n");
-    }
+    // printf("--- \n");
+    // printf("--- LD full ENCRIPTION output:\n");
+    // for (int i = 0; i < 16; i++) {
+    //     printf("%02X ", output[i]); 
+    //     if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
+    //         printf("\n");
+    // }
+    
+    //printf("LD IN FUNCTION check 003 \n");
     return output;
 }
 

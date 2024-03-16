@@ -10,6 +10,10 @@ rijndael = ctypes.CDLL('./rijndael.so')
 rijndael.expand_key.argtypes = [ctypes.POINTER(ctypes.c_ubyte)]
 rijndael.expand_key.restype = ctypes.POINTER(ctypes.c_ubyte)
 
+#LD this define argument and return types for "expand_key"
+rijndael.aes_encrypt_block.argtypes = [ctypes.POINTER(ctypes.c_ubyte)]
+rijndael.aes_encrypt_block.restype = ctypes.POINTER(ctypes.c_ubyte)
+
 def generate_random_plaintext(length):
     return bytearray([random.randint(0, 255) for _ in range(length)])
 
@@ -350,16 +354,19 @@ class AesTestMethods(unittest.TestCase):
                         0x16, 0xa6, 0x88, 0x3c,])
         key_buffer = ctypes.create_string_buffer(bytes(key)) 
 
+        #encrypted_output = rijndael.aes_encrypt_block(plaintext_buffer, key_buffer)
+        #print("--- UT check 000")
+
+        ld_encripted_block_ptr = rijndael.aes_encrypt_block(ctypes.cast(plaintext_buffer, ctypes.POINTER(ctypes.c_ubyte)),ctypes.cast(key_buffer, ctypes.POINTER(ctypes.c_ubyte)))
+        #print("--- UT check 001")
+        ld_encripted_block_bytes = bytearray(ctypes.cast(ld_encripted_block_ptr, ctypes.POINTER(ctypes.c_ubyte * 16)).contents)
+        #print("--- UT check 002")
         expected_output = bytearray([0x39, 0x02, 0xdc, 0x19,
-                                     0x25, 0xdc, 0x11, 0x6a,
-                                     0x84, 0x09, 0x85, 0x0b,
-                                     0x1d, 0xfb, 0x97, 0x32])
+                                    0x25, 0xdc, 0x11, 0x6a,
+                                    0x84, 0x09, 0x85, 0x0b,
+                                    0x1d, 0xfb, 0x97, 0x32])
 
-        encrypted_output = rijndael.aes_encrypt_block(plaintext_buffer, key_buffer)
-
-        result = bytearray(ctypes.string_at(encrypted_output, len(expected_output)))
-
-        self.assertEqual(result, expected_output)
+        self.assertEqual(ld_encripted_block_bytes, expected_output)
         print("--- UT PASSED aes_encrypt_block")
 
 
