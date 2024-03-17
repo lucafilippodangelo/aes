@@ -1,7 +1,7 @@
 import unittest
 import ctypes
 import random
-from aes import sub_bytes, sub_bytes_ld, shift_rows_ld, bytes2matrix, matrix2bytes, mix_columns_ld, mix_columns
+from aes import sub_bytes, shift_rows, bytes2matrix, matrix2bytes, mix_columns
 from ctypes import CDLL
 libc = CDLL("libc.so.6")  
 
@@ -66,16 +66,13 @@ class AesTestMethods(unittest.TestCase):
             
             #LD test id same function in python behave the same
             plaintext_matrix = bytes2matrix(plaintext) #LD convert same input plaintext to a matrix
-            expected_output_python = sub_bytes_ld(plaintext_matrix)  #LD now call sub_bytes from aes.py
+            sub_bytes(plaintext_matrix)  #LD now call sub_bytes from aes.py
             #print("sub_bytes P:", expected_output_python)
             #for row in expected_output_python:
                 #print([hex(byte) for byte in row])
 
             #print(f"--- LOOP n. {num_attempts} with hexadecimal: {[hex(byte) for byte in plaintext]}")
-            self.assertEqual(expected_output_c, expected_output_python)
-
-        # Asserting the match between C and Python results
-        #self.assertEqual(expected_output_c, expected_output_python)
+            self.assertEqual(expected_output_c, plaintext_matrix)
 
         print(f"--- UT PASSED test_both_sub_bytes with {num_attempts} attempts")
 
@@ -111,13 +108,13 @@ class AesTestMethods(unittest.TestCase):
             
             #LD test id same function in python behave the same
             plaintext_matrix = bytes2matrix(plaintext) #LD convert same input plaintext to a matrix
-            expected_output_python = sub_bytes_ld(plaintext_matrix)  #LD now call sub_bytes from aes.py
+            sub_bytes(plaintext_matrix)  #LD now call sub_bytes from aes.py
             #print("sub_bytes P:", expected_output_python)
             #for row in expected_output_python:
                 #print([hex(byte) for byte in row])
 
             #print(f"--- LOOP n. {num_attempts} with hexadecimal: {[hex(byte) for byte in plaintext]}")
-            self.assertEqual(expected_output_c, expected_output_python)
+            self.assertEqual(expected_output_c, plaintext_matrix)
 
         # Asserting the match between C and Python results
         #self.assertEqual(expected_output_c, expected_output_python)
@@ -169,8 +166,8 @@ class AesTestMethods(unittest.TestCase):
             #Eoin explanation:  shift columns instead of a shift rows: the blocks are being stored column-wise rather than row-wise
             plaintext_matrix = bytes2matrix(plaintext)
             expected_matrix = self.transpose(plaintext_matrix)
-            output_python = shift_rows_ld(expected_matrix)
-            expected_output_python = self.transpose(output_python)
+            shift_rows(expected_matrix)
+            expected_output_python = self.transpose(expected_matrix)
 
             # print(f"P return")
             # for row in expected_output_python:
@@ -250,15 +247,15 @@ class AesTestMethods(unittest.TestCase):
             
             #LD test id same function in python behave the same
             flipped = turnMatrixLd(plaintext)
-            expected_output_python = mix_columns_ld(bytes2matrix(flipped))  #LD now call sub_bytes from aes.py
-            expected_output_python_bytes = turnMatrixLd_reverse(matrix2bytes(expected_output_python))
+            bytesListToMatrix = bytes2matrix(flipped)
+            mix_columns(bytesListToMatrix)  
+            self.assertEqual(expected_output_c, turnMatrixLd_reverse(matrix2bytes(bytesListToMatrix)))
 
             # print(f"P return")
             # for row in expected_output_python:
             #     print([hex(byte) for byte in row])
 
             #print(f"--- LOOP n. {num_attempts} with hexadecimal: {[hex(byte) for byte in plaintext]}")
-            self.assertEqual(expected_output_c, expected_output_python_bytes)
 
         print(f"--- UT PASSED test_both_sub_bytes with {num_attempts} attempts")
         
