@@ -10,6 +10,7 @@
 #define BLOCK_SIZE 16
 
 extern const unsigned char s_box[256];
+extern const unsigned char inv_s_box[256];
 
 /*
  * These should be the main encrypt/decrypt functions (i.e. the main

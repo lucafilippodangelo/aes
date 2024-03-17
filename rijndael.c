@@ -9,8 +9,6 @@
 // TODO: Any other files you need to include should go here
 #include "rijndael.h"
 
-#define xtime(a) ((((a) << 1) ^ (((a) & 0x80) ? 0x1B : 0x00)) & 0xFF)
-
 // LD will be used across this CA
 const unsigned char s_box[256] = {
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
@@ -163,53 +161,6 @@ void shift_rows(unsigned char *block) {
     // }
 }
 
-//LD trying to use exact same approach of aes.py
-// void mix_single_column(unsigned char *a) {
-//     unsigned char t = a[0] ^ a[1] ^ a[2] ^ a[3];
-//     unsigned char u = a[0];
-
-//     a[0] ^= t ^ xtime(a[0] ^ a[1]);
-//     a[1] ^= t ^ xtime(a[1] ^ a[2]);
-//     a[2] ^= t ^ xtime(a[2] ^ a[3]);
-//     a[3] ^= t ^ xtime(a[3] ^ u);
-// }
-
-// void mix_columns(unsigned char *block) {
-//   //LD resource: https://github.com/m3y54m/aes-in-c#aes-operations-subbytes-shiftrow-mixcolumn-and-addroundkey
-//   //LD resource: https://cnj.atu.edu.iq/wp-content/uploads/2019/10/8.pdf
-
-//     // printf("--- \n");
-//     // printf("--- LD mix_columns hexadecimal of the input:\n");
-//     // for (int i = 0; i < 16; i++) {
-//     //     printf("%02X ", block[i]); 
-//     //     if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
-//     //         printf("\n");
-//     // }
-
-//     unsigned char column[4];
-
-//     for (int i = 0; i < 4; i++) {
-//         for (int j = 0; j < 4; j++) {
-//             column[j] = block[i + 4 * j];
-//         }
-
-//         mix_single_column(column);
-
-//         for (int j = 0; j < 4; j++) {
-//             block[i + 4 * j] = column[j];
-//         }
-//     }
-
-//     // printf("--- \n");
-//     // printf("--- LD mix_columns OUTPUT hexadecimal\n");
-//     // for (int i = 0; i < 16; i++) {
-//     //     printf("%02X ", block[i]); 
-//     //     if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
-//     //         printf("\n");
-//     // }
-
-// }
-
 ///////
 //LD resource https://github.com/m3y54m/aes-in-c/tree/main/src
 ///////
@@ -354,9 +305,6 @@ unsigned char multiply(unsigned char a, unsigned char b) {
     return result;
 }
 
-
-
-
 void invert_mix_columns(unsigned char *block) {
 
     int i, j;
@@ -381,7 +329,6 @@ void invert_mix_columns(unsigned char *block) {
         }
     }
 }
-
 
 void invMixColumn(unsigned char *column)
 {
@@ -409,7 +356,6 @@ void invMixColumn(unsigned char *column)
                 galois_multiplication(cpy[0], 11);
 }
 
-
 unsigned char galois_multiplication(unsigned char a, unsigned char b)
 {
     unsigned char p = 0;
@@ -428,7 +374,6 @@ unsigned char galois_multiplication(unsigned char a, unsigned char b)
     return p;
 }
 
-
 /*
  * This operation is shared between encryption and decryption
  */
@@ -441,13 +386,19 @@ void add_round_key(unsigned char *block, unsigned char *round_key) {
     //     }
     //     printf("\n");
     // }
-
+    
+    //     unsigned char dummy_key[16] = {
+    //     0x01, 0x23, 0x45, 0x67,
+    //     0x89, 0xAB, 0xCD, 0xEF,
+    //     0x10, 0x32, 0x54, 0x76,
+    //     0x98, 0xBA, 0xDC, 0xFE
+    // };
+    
     for (int i = 0; i < 16; i++) {
         block[i] ^= round_key[i];
     }
 
     // printf("----\n");
-
     // for (int i = 0; i < 4; i++) {
     //     for (int j = 0; j < 4; j++) {
     //         printf("%02x ", block[i * 4 + j]);
@@ -466,9 +417,6 @@ void add_round_key(unsigned char *block, unsigned char *round_key) {
 * LD I will take a different approach than in "aes.py". What probably done there is a "RotWord" left shift.
 * instead I want to implement it exactly as explained in lecture by Eoin. End result of UT I will implement must be same
 */
-
-#include <stdio.h>
-#include <stdlib.h>
 
 //LD perform RotWord on cipherKey and update word
 void RotWord(unsigned char *word, const unsigned char cipherKey[], int key_number)
@@ -539,7 +487,8 @@ void XOR_2(unsigned char *result, unsigned char *a, unsigned char *b) {
 //LD added logic to generate the whole array to return
 unsigned char *expand_key(unsigned char *cipher_key)
 {
-    unsigned char *expanded_key = malloc(176 * sizeof(unsigned char));
+    unsigned char *expanded_key = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE * 11);//unsigned char *expanded_key = malloc(176 * sizeof(unsigned char));
+    
     //printf("LD print input cipher_ke:\n");
     //ld_print_128bit_block(cipher_key);
 
@@ -553,155 +502,177 @@ unsigned char *expand_key(unsigned char *cipher_key)
     {
         expanded_key[i] = cipher_key[i];
     }
-    for (int i = 0; i < 10; i++)
-    {
-        unsigned char temp_calc_1[4];
-        unsigned char temp_calc_2[4];
-        unsigned char temp_calc_3[4];
-        unsigned char temp_calc_4[4];
-        // LD ROTWORD
-        RotWord(temp_calc_1, expanded_key, i);
-        // LD SUBBYTES
-        SubBytes(temp_calc_1);
-        // LD extract the first column form the key
-        ldExtractColumnFromKey(1, expanded_key, i, temp_calc_2);
-        // LD extracting the X number column. Can be reused. At the moment extracting column number one
-        ldExtractColumnFromRcon(i + 1, temp_calc_3);
-        XOR(temp_calc_4, temp_calc_1, temp_calc_2, temp_calc_3);
+
+//LD BEGIN - COULD PROBLEM BE HERE? ///////////////////////////////////////////////////////////////////
+    // for (int i = 0; i < 10; i++)
+    // {
+    //     unsigned char temp_calc_1[4];
+    //     unsigned char temp_calc_2[4];
+    //     unsigned char temp_calc_3[4];
+    //     unsigned char temp_calc_4[4];
+    //     // LD ROTWORD
+    //     RotWord(temp_calc_1, expanded_key, i);
+    //     // LD SUBBYTES
+    //     SubBytes(temp_calc_1);
+    //     // LD extract the first column form the key
+    //     ldExtractColumnFromKey(1, expanded_key, i, temp_calc_2);
+    //     // LD extracting the X number column. Can be reused. At the moment extracting column number one
+    //     ldExtractColumnFromRcon(i + 1, temp_calc_3);
+    //     XOR(temp_calc_4, temp_calc_1, temp_calc_2, temp_calc_3);
         
-		// LD MAKING OF COL 2. COL 2 is the XOR of col2 of key in input with col 1 just calculated
-        unsigned char temp_columnExtractedFromKey[4];
-        ldExtractColumnFromKey(2, expanded_key, i, temp_columnExtractedFromKey);
-        unsigned char temp_col2[4];
-        XOR_2(temp_col2, temp_columnExtractedFromKey, temp_calc_4);
+	// 	// LD MAKING OF COL 2. COL 2 is the XOR of col2 of key in input with col 1 just calculated
+    //     unsigned char temp_columnExtractedFromKey[4];
+    //     ldExtractColumnFromKey(2, expanded_key, i, temp_columnExtractedFromKey);
+    //     unsigned char temp_col2[4];
+    //     XOR_2(temp_col2, temp_columnExtractedFromKey, temp_calc_4);
         
-		// LD MAKING OF COL 3. COL 3 is the XOR of col3 of key in input with col 2 just calculated
-        ldExtractColumnFromKey(3, expanded_key, i, temp_columnExtractedFromKey);
-        unsigned char temp_col3[4];
-        XOR_2(temp_col3, temp_columnExtractedFromKey, temp_col2);
+	// 	// LD MAKING OF COL 3. COL 3 is the XOR of col3 of key in input with col 2 just calculated
+    //     ldExtractColumnFromKey(3, expanded_key, i, temp_columnExtractedFromKey);
+    //     unsigned char temp_col3[4];
+    //     XOR_2(temp_col3, temp_columnExtractedFromKey, temp_col2);
         
-		// LD MAKING OF COL 4. COL 4 is the XOR of col4 of key in input with col 3 just calculated
-        ldExtractColumnFromKey(4, expanded_key, i, temp_columnExtractedFromKey);
-        unsigned char temp_col4[4];
-        XOR_2(temp_col4, temp_columnExtractedFromKey, temp_col3);
-		
-		
-        // Assign temporary columns to expanded keys
-        for (int j = 0; j < 4; j++)
-        {
-            int z = ((i + 1) * BLOCK_SIZE) + (j * 4);
-            expanded_key[z] = temp_calc_4[j];
-        }
-        for (int j = 0; j < 4; j++)
-        {
-            int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 1;
-            expanded_key[z] = temp_col2[j];
-        }
-        for (int j = 0; j < 4; j++)
-        {
-            int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 2;
-            expanded_key[z] = temp_col3[j];
-        }
-        for (int j = 0; j < 4; j++)
-        {
-            int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 3;
-            expanded_key[z] = temp_col4[j];
-        }
-    }
+	// 	// LD MAKING OF COL 4. COL 4 is the XOR of col4 of key in input with col 3 just calculated
+    //     ldExtractColumnFromKey(4, expanded_key, i, temp_columnExtractedFromKey);
+    //     unsigned char temp_col4[4];
+    //     XOR_2(temp_col4, temp_columnExtractedFromKey, temp_col3);
+			
+    //     // Assign temporary columns to expanded keys
+    //     for (int j = 0; j < 4; j++)
+    //     {
+    //         int z = ((i + 1) * BLOCK_SIZE) + (j * 4);
+    //         expanded_key[z] = temp_calc_4[j];
+    //     }
+    //     for (int j = 0; j < 4; j++)
+    //     {
+    //         int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 1;
+    //         expanded_key[z] = temp_col2[j];
+    //     }
+    //     for (int j = 0; j < 4; j++)
+    //     {
+    //         int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 2;
+    //         expanded_key[z] = temp_col3[j];
+    //     }
+    //     for (int j = 0; j < 4; j++)
+    //     {
+    //         int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 3;
+    //         expanded_key[z] = temp_col4[j];
+    //     }
+    // }
+
+//LD END - COULD PROBLEM BE HERE? ///////////////////////////////////////////////////////////////////
+
     //printf("Expanded Keys:\n");
     //print_hex_array(expanded_key, 176);
     return expanded_key;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///// LD IN TEST
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
  * The implementations of the functions declared in the
  * header file should go here
  */
 unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
+    unsigned char *temp_plaintext = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
+    if (temp_plaintext == NULL) {
+        fprintf(stderr, "LD temp_plaintext memory allocation issues\n");
+        return NULL;
+    }
+    memcpy(temp_plaintext, plaintext, BLOCK_SIZE);
 
-    printf("--- \n");
-    printf("--- LD PLAINTEXT aes_encrypt_block:\n");
-    for (int i = 0; i < 16; i++) {
-        printf("%02X ", plaintext[i]); 
-        if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
-            printf("\n");
+    // printf("--- \n");
+    // printf("--- LD PLAINTEXT aes_encrypt_block:\n");
+    // for (int i = 0; i < 16; i++) {
+    //     printf("%02X ", temp_plaintext[i]); 
+    //     if ((i + 1) % 4 == 0)
+    //         printf("\n");
+    // }
+
+    unsigned char *round_keys = expand_key(key);
+    if (round_keys == NULL) {
+        fprintf(stderr, "LD round_keys memory allocation issues\n");
+        return NULL;
     }
 
-    unsigned char *output = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
-    unsigned char *round_keys = expand_key(key);
-
-    add_round_key(plaintext, round_keys);
+    add_round_key(temp_plaintext, round_keys);
 
     for (int round = 1; round < 10; ++round) {
-        sub_bytes(plaintext);
-        shift_rows(plaintext);
-        mix_columns(plaintext);
-        add_round_key(plaintext, round_keys + round * BLOCK_SIZE); //LD advancing the pointer by blocksize
+        sub_bytes(temp_plaintext);
+        shift_rows(temp_plaintext);
+        mix_columns(temp_plaintext);
+        add_round_key(temp_plaintext, round_keys + round * BLOCK_SIZE); //LD advancing the pointer by blocksize
     }
 
-    sub_bytes(plaintext);
-    shift_rows(plaintext);
-    add_round_key(plaintext, round_keys + 10 * BLOCK_SIZE);
+    sub_bytes(temp_plaintext);
+    shift_rows(temp_plaintext);
+    add_round_key(temp_plaintext, round_keys + 10 * BLOCK_SIZE);
 
-    memcpy(output, plaintext, BLOCK_SIZE);
+    
 
     //printf("LD IN FUNCTION check 001 \n");
     free(round_keys); //LD release allocated memory
     //printf("LD IN FUNCTION check 002 \n");
 
-    printf("--- \n");
-    printf("--- LD ENCRIPTED aes_encrypt_block:\n");
-    for (int i = 0; i < 16; i++) {
-        printf("%02X ", output[i]); 
-        if ((i + 1) % 4 == 0)
-            printf("\n");
-    }
+    // printf("--- \n");
+    // printf("--- LD ENCRIPTED aes_encrypt_block:\n");
+    // for (int i = 0; i < 16; i++) {
+    //     printf("%02X ", output[i]); 
+    //     if ((i + 1) % 4 == 0)
+    //         printf("\n");
+    // }
     
-    printf("LD EXECUTED aes_encrypt_block \n");
-    return output;
+    //printf("LD EXECUTED aes_encrypt_block \n");
+    return temp_plaintext;
 }
 
 unsigned char *aes_decrypt_block(unsigned char *ciphertext, unsigned char *key) {
-
-    printf("--- \n");
-    printf("--- LD CIPHERTEXT aes_decrypt_block:\n");
-    for (int i = 0; i < 16; i++) {
-        printf("%02X ", ciphertext[i]); 
-        if ((i + 1) % 4 == 0)
-            printf("\n");
+    unsigned char *temp_ciphertext = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
+    if (temp_ciphertext == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        return NULL;
     }
+    memcpy(temp_ciphertext, ciphertext, BLOCK_SIZE);
+
+    // printf("--- \n");
+    // printf("--- LD CIPHERTEXT aes_decrypt_block:\n");
+    // for (int i = 0; i < 16; i++) {
+    //     printf("%02X ", temp_ciphertext[i]); 
+    //     if ((i + 1) % 4 == 0)
+    //         printf("\n");
+    // }
 
     //LD it's exactly all the way around!
-    unsigned char *output = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
+
     unsigned char *round_keys = expand_key(key);
 
-    add_round_key(ciphertext, round_keys + 10 * BLOCK_SIZE);
-    invert_shift_rows(ciphertext);
-    invert_sub_bytes(ciphertext);
+    add_round_key(temp_ciphertext, round_keys + 10 * BLOCK_SIZE);
+    invert_shift_rows(temp_ciphertext);
+    invert_sub_bytes(temp_ciphertext);
 
     for (int round = 9; round > 0; --round) {
-        add_round_key(ciphertext, round_keys + round * BLOCK_SIZE);
-        invert_mix_columns(ciphertext);
-        invert_shift_rows(ciphertext);
-        invert_sub_bytes(ciphertext);
+        add_round_key(temp_ciphertext, round_keys + round * BLOCK_SIZE);
+        invert_mix_columns(temp_ciphertext);
+        invert_shift_rows(temp_ciphertext);
+        invert_sub_bytes(temp_ciphertext);
     }
 
-    add_round_key(ciphertext, round_keys);
-
-    memcpy(output, ciphertext, BLOCK_SIZE);
+    add_round_key(temp_ciphertext, round_keys);
 
     free(round_keys);
 
-    printf("--- \n");
-    printf("--- LD DECRIPTED aes_decrypt_block:\n");
-    for (int i = 0; i < 16; i++) {
-        printf("%02X ", output[i]); 
-        if ((i + 1) % 4 == 0)
-            printf("\n");
-    }
+    // printf("--- \n");
+    // printf("--- LD DECRIPTED aes_decrypt_block:\n");
+    // for (int i = 0; i < 16; i++) {
+    //     printf("%02X ", ciphertext_cpy[i]); 
+    //     if ((i + 1) % 4 == 0)
+    //         printf("\n");
+    // }
 
-    printf("LD EXECUTED aes_decrypt_block \n");
-    return output;
+    // printf("--- \n");
+    // printf("--- LD EXECUTED aes_decrypt_block \n");
+    // printf("--- \n");
+    
+    return temp_ciphertext;
 }

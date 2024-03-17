@@ -52,34 +52,32 @@ inv_s_box = (
     0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D,
 )
 
+def sub_bytes_ld(s):
+    for i in range(4):
+        for j in range(4):
+            s[i][j] = s_box[s[i][j]]
+    return s #LD just a clone with return of "def sub_bytes(s):" for testing purposes   
 
 def sub_bytes(s):
     for i in range(4):
         for j in range(4):
             s[i][j] = s_box[s[i][j]]
 
-def sub_bytes_ld(s):
-    for i in range(4):
-        for j in range(4):
-            s[i][j] = s_box[s[i][j]]
-    return s #LD just a clone with return of "def sub_bytes(s):" for testing purposes        
-
 def inv_sub_bytes(s):
     for i in range(4):
         for j in range(4):
             s[i][j] = inv_s_box[s[i][j]]
-
-
-def shift_rows(s):
-    s[0][1], s[1][1], s[2][1], s[3][1] = s[1][1], s[2][1], s[3][1], s[0][1]
-    s[0][2], s[1][2], s[2][2], s[3][2] = s[2][2], s[3][2], s[0][2], s[1][2]
-    s[0][3], s[1][3], s[2][3], s[3][3] = s[3][3], s[0][3], s[1][3], s[2][3]
 
 def shift_rows_ld(s):
     s[0][1], s[1][1], s[2][1], s[3][1] = s[1][1], s[2][1], s[3][1], s[0][1]
     s[0][2], s[1][2], s[2][2], s[3][2] = s[2][2], s[3][2], s[0][2], s[1][2]
     s[0][3], s[1][3], s[2][3], s[3][3] = s[3][3], s[0][3], s[1][3], s[2][3]
     return s #LD just a clone with return of "def sub_bytes(s):" for testing purposes  
+
+def shift_rows(s):
+    s[0][1], s[1][1], s[2][1], s[3][1] = s[1][1], s[2][1], s[3][1], s[0][1]
+    s[0][2], s[1][2], s[2][2], s[3][2] = s[2][2], s[3][2], s[0][2], s[1][2]
+    s[0][3], s[1][3], s[2][3], s[3][3] = s[3][3], s[0][3], s[1][3], s[2][3]
 
 def inv_shift_rows(s):
     s[0][1], s[1][1], s[2][1], s[3][1] = s[3][1], s[0][1], s[1][1], s[2][1]
@@ -95,6 +93,10 @@ def add_round_key(s, k):
 # learned from https://web.archive.org/web/20100626212235/http://cs.ucsb.edu/~koc/cs178/projects/JT/aes.c
 xtime = lambda a: (((a << 1) ^ 0x1B) & 0xFF) if (a & 0x80) else (a << 1)
 
+def mix_columns_ld(s):
+    for i in range(4):
+        mix_single_column(s[i])
+    return s
 
 def mix_single_column(a):
     # see Sec 4.1.2 in The Design of Rijndael
@@ -105,16 +107,10 @@ def mix_single_column(a):
     a[2] ^= t ^ xtime(a[2] ^ a[3])
     a[3] ^= t ^ xtime(a[3] ^ u)
 
-
 def mix_columns(s):
     for i in range(4):
         mix_single_column(s[i])
 
-def mix_columns_ld(s):
-    for i in range(4):
-        mix_single_column(s[i])
-    return s
-    
 def inv_mix_columns(s):
     # see Sec 4.1.3 in The Design of Rijndael
     for i in range(4):
