@@ -165,13 +165,52 @@ void shift_rows(unsigned char *block) {
 //LD resource https://github.com/m3y54m/aes-in-c/tree/main/src
 ///////
 
-// Function prototype for mixColumn
-void mixColumn(unsigned char *column);
-// Function prototype for invMixColumn
-void invMixColumn(unsigned char *column);
 
-// Function prototype for galois_multiplication
+void mixColumn(unsigned char *column);
+void invMixColumn(unsigned char *column);
 unsigned char galois_multiplication(unsigned char a, unsigned char b);
+
+unsigned char multiply(unsigned char a, unsigned char b) {
+    unsigned char result = 0;
+    unsigned char carry;
+
+    for (int i = 0; i < 8; i++) {
+        if (b & 1) {
+            result ^= a;
+        }
+
+        carry = a & 0x80;
+        a <<= 1;
+
+        if (carry) {
+            a ^= 0x1B; // 0x1B is the irreducible polynomial in AES
+        }
+
+        b >>= 1;
+    }
+
+    return result;
+}
+
+unsigned char galois_multiplication(unsigned char a, unsigned char b)
+{
+    unsigned char p = 0;
+    unsigned char counter;
+    unsigned char hi_bit_set;
+    for (counter = 0; counter < 8; counter++)
+    {
+        if ((b & 1) == 1)
+            p ^= a;
+        hi_bit_set = (a & 0x80);
+        a <<= 1;
+        if (hi_bit_set == 0x80)
+            a ^= 0x1b;
+        b >>= 1;
+    }
+    return p;
+}
+
+
 
 void mix_columns(unsigned char *state)
 {
@@ -283,28 +322,6 @@ void invert_shift_rows(unsigned char *block) {
     block[12] = temp;
 }
 
-unsigned char multiply(unsigned char a, unsigned char b) {
-    unsigned char result = 0;
-    unsigned char carry;
-
-    for (int i = 0; i < 8; i++) {
-        if (b & 1) {
-            result ^= a;
-        }
-
-        carry = a & 0x80;
-        a <<= 1;
-
-        if (carry) {
-            a ^= 0x1B; // 0x1B is the irreducible polynomial in AES
-        }
-
-        b >>= 1;
-    }
-
-    return result;
-}
-
 void invert_mix_columns(unsigned char *block) {
 
     int i, j;
@@ -356,23 +373,6 @@ void invMixColumn(unsigned char *column)
                 galois_multiplication(cpy[0], 11);
 }
 
-unsigned char galois_multiplication(unsigned char a, unsigned char b)
-{
-    unsigned char p = 0;
-    unsigned char counter;
-    unsigned char hi_bit_set;
-    for (counter = 0; counter < 8; counter++)
-    {
-        if ((b & 1) == 1)
-            p ^= a;
-        hi_bit_set = (a & 0x80);
-        a <<= 1;
-        if (hi_bit_set == 0x80)
-            a ^= 0x1b;
-        b >>= 1;
-    }
-    return p;
-}
 
 /*
  * This operation is shared between encryption and decryption
@@ -489,8 +489,8 @@ unsigned char *expand_key(unsigned char *cipher_key)
 {
     unsigned char *expanded_key = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE * 11);//unsigned char *expanded_key = malloc(176 * sizeof(unsigned char));
     
-    //printf("LD print input cipher_ke:\n");
-    //ld_print_128bit_block(cipher_key);
+    // printf("LD EXPANDED KEY print input cipher_ke:\n");
+    // ld_print_128bit_block(cipher_key);
 
     // LD https://www.quora.com/Is-malloc-initializing-allocated-array-to-zero-C-initialization-malloc-development
     for (int i = 0; i < 176; i++)
@@ -503,63 +503,60 @@ unsigned char *expand_key(unsigned char *cipher_key)
         expanded_key[i] = cipher_key[i];
     }
 
-//LD BEGIN - COULD PROBLEM BE HERE? ///////////////////////////////////////////////////////////////////
-    // for (int i = 0; i < 10; i++)
-    // {
-    //     unsigned char temp_calc_1[4];
-    //     unsigned char temp_calc_2[4];
-    //     unsigned char temp_calc_3[4];
-    //     unsigned char temp_calc_4[4];
-    //     // LD ROTWORD
-    //     RotWord(temp_calc_1, expanded_key, i);
-    //     // LD SUBBYTES
-    //     SubBytes(temp_calc_1);
-    //     // LD extract the first column form the key
-    //     ldExtractColumnFromKey(1, expanded_key, i, temp_calc_2);
-    //     // LD extracting the X number column. Can be reused. At the moment extracting column number one
-    //     ldExtractColumnFromRcon(i + 1, temp_calc_3);
-    //     XOR(temp_calc_4, temp_calc_1, temp_calc_2, temp_calc_3);
+    for (int i = 0; i < 10; i++)
+    {
+        unsigned char temp_calc_1[4];
+        unsigned char temp_calc_2[4];
+        unsigned char temp_calc_3[4];
+        unsigned char temp_calc_4[4];
+        // LD ROTWORD
+        RotWord(temp_calc_1, expanded_key, i);
+        // LD SUBBYTES
+        SubBytes(temp_calc_1);
+        // LD extract the first column form the key
+        ldExtractColumnFromKey(1, expanded_key, i, temp_calc_2);
+        // LD extracting the X number column. Can be reused. At the moment extracting column number one
+        ldExtractColumnFromRcon(i + 1, temp_calc_3);
+        XOR(temp_calc_4, temp_calc_1, temp_calc_2, temp_calc_3);
         
-	// 	// LD MAKING OF COL 2. COL 2 is the XOR of col2 of key in input with col 1 just calculated
-    //     unsigned char temp_columnExtractedFromKey[4];
-    //     ldExtractColumnFromKey(2, expanded_key, i, temp_columnExtractedFromKey);
-    //     unsigned char temp_col2[4];
-    //     XOR_2(temp_col2, temp_columnExtractedFromKey, temp_calc_4);
+		// LD MAKING OF COL 2. COL 2 is the XOR of col2 of key in input with col 1 just calculated
+        unsigned char temp_columnExtractedFromKey[4];
+        ldExtractColumnFromKey(2, expanded_key, i, temp_columnExtractedFromKey);
+        unsigned char temp_col2[4];
+        XOR_2(temp_col2, temp_columnExtractedFromKey, temp_calc_4);
         
-	// 	// LD MAKING OF COL 3. COL 3 is the XOR of col3 of key in input with col 2 just calculated
-    //     ldExtractColumnFromKey(3, expanded_key, i, temp_columnExtractedFromKey);
-    //     unsigned char temp_col3[4];
-    //     XOR_2(temp_col3, temp_columnExtractedFromKey, temp_col2);
+		// LD MAKING OF COL 3. COL 3 is the XOR of col3 of key in input with col 2 just calculated
+        ldExtractColumnFromKey(3, expanded_key, i, temp_columnExtractedFromKey);
+        unsigned char temp_col3[4];
+        XOR_2(temp_col3, temp_columnExtractedFromKey, temp_col2);
         
-	// 	// LD MAKING OF COL 4. COL 4 is the XOR of col4 of key in input with col 3 just calculated
-    //     ldExtractColumnFromKey(4, expanded_key, i, temp_columnExtractedFromKey);
-    //     unsigned char temp_col4[4];
-    //     XOR_2(temp_col4, temp_columnExtractedFromKey, temp_col3);
+		// LD MAKING OF COL 4. COL 4 is the XOR of col4 of key in input with col 3 just calculated
+        ldExtractColumnFromKey(4, expanded_key, i, temp_columnExtractedFromKey);
+        unsigned char temp_col4[4];
+        XOR_2(temp_col4, temp_columnExtractedFromKey, temp_col3);
 			
-    //     // Assign temporary columns to expanded keys
-    //     for (int j = 0; j < 4; j++)
-    //     {
-    //         int z = ((i + 1) * BLOCK_SIZE) + (j * 4);
-    //         expanded_key[z] = temp_calc_4[j];
-    //     }
-    //     for (int j = 0; j < 4; j++)
-    //     {
-    //         int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 1;
-    //         expanded_key[z] = temp_col2[j];
-    //     }
-    //     for (int j = 0; j < 4; j++)
-    //     {
-    //         int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 2;
-    //         expanded_key[z] = temp_col3[j];
-    //     }
-    //     for (int j = 0; j < 4; j++)
-    //     {
-    //         int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 3;
-    //         expanded_key[z] = temp_col4[j];
-    //     }
-    // }
-
-//LD END - COULD PROBLEM BE HERE? ///////////////////////////////////////////////////////////////////
+        // Assign temporary columns to expanded keys
+        for (int j = 0; j < 4; j++)
+        {
+            int z = ((i + 1) * BLOCK_SIZE) + (j * 4);
+            expanded_key[z] = temp_calc_4[j];
+        }
+        for (int j = 0; j < 4; j++)
+        {
+            int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 1;
+            expanded_key[z] = temp_col2[j];
+        }
+        for (int j = 0; j < 4; j++)
+        {
+            int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 2;
+            expanded_key[z] = temp_col3[j];
+        }
+        for (int j = 0; j < 4; j++)
+        {
+            int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 3;
+            expanded_key[z] = temp_col4[j];
+        }
+    }
 
     //printf("Expanded Keys:\n");
     //print_hex_array(expanded_key, 176);
@@ -618,7 +615,7 @@ unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
     // printf("--- \n");
     // printf("--- LD ENCRIPTED aes_encrypt_block:\n");
     // for (int i = 0; i < 16; i++) {
-    //     printf("%02X ", output[i]); 
+    //     printf("%02X ", temp_plaintext[i]); 
     //     if ((i + 1) % 4 == 0)
     //         printf("\n");
     // }
