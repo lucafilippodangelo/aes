@@ -548,24 +548,18 @@ class AesTestMethods(unittest.TestCase):
     #LD test end to end with main values
     def test_platground(self):
 
-        #LD same key of main
-        master_key = bytearray([0x32, 0x14, 0x2E, 0x56, 
-                                0x43, 0x09, 0x46, 0x1B, 
-                                0x4B, 0x11, 0x33, 0x11, 
-                                0x04, 0x08, 0x06, 0x63])
+        integer_list = [1, 2,  3,  4,  5,  6,  7,  8, 9, 10, 11, 12, 13, 14, 15, 16]
+        plaintext = bytearray(integer_list)
+        
+        integer_list2 = [50, 20, 46, 86, 67, 9, 70, 27, 75, 17, 51, 17, 4, 8, 6, 99]
+        master_key = bytearray(integer_list2)
 
         aes = AES(turnMatrixLd(master_key))#LD ogni 4 bytes e' una colonna(visualizzata) ruotata in senso antiorario di 90 gradi
 
-        plaintext = bytearray([0x01, 0x02, 0x03, 0x04, 
-                               0x05, 0x06, 0x07, 0x08, 
-                               0x09, 0x0A, 0x0B, 0x0C, 
-                               0x0D, 0x0E, 0x0F, 0x10])
-
         ciphertext = aes.encrypt_block(turnMatrixLd(plaintext)) #LD ogni 4 bytes e' una colonna(visualizzata) ruotata in senso antiorario di 90 gradi
-
         decrypted_plaintext = aes.decrypt_block(ciphertext)
 
-
+        print("---XXX")
         print("plaintext:")
         print([hex(byte) for byte in plaintext])
 
@@ -577,20 +571,25 @@ class AesTestMethods(unittest.TestCase):
         print("---")
         print("---")
 
+
+
     #LD test end to end correct inversion, calling python with same values in UT for C(I have above)
     def test_platground_inverted(self):
 
-        master_key = bytearray([0x2b, 0x28, 0xab, 0x09,
-                                0x7e, 0xae, 0xf7, 0xcf,
-                                0x15, 0xd2, 0x15, 0x4f,
-                                0x16, 0xa6, 0x88, 0x3c])
-        aes = AES(turnMatrixLd(master_key))#LD ogni 4 bytes e' una colonna(visualizzata) ruotata in senso antiorario di 90 gradi
+
 
         plaintext = bytearray([0x32, 0x88, 0x31, 0xe0,
                                0x43, 0x5a, 0x31, 0x37,
                                0xf6, 0x30, 0x98, 0x07,
                                0xa8, 0x8d, 0xa2, 0x34])
-
+        
+        master_key = bytearray([0x2b, 0x28, 0xab, 0x09,
+                                0x7e, 0xae, 0xf7, 0xcf,
+                                0x15, 0xd2, 0x15, 0x4f,
+                                0x16, 0xa6, 0x88, 0x3c])
+        
+        aes = AES(turnMatrixLd(master_key))#LD ogni 4 bytes e' una colonna(visualizzata) ruotata in senso antiorario di 90 gradi
+        
         ciphertext = aes.encrypt_block(turnMatrixLd(plaintext)) #LD ogni 4 bytes e' una colonna(visualizzata) ruotata in senso antiorario di 90 gradi
 
         decrypted_plaintext = aes.decrypt_block(ciphertext)
@@ -613,7 +612,7 @@ class AesTestMethods(unittest.TestCase):
                                 0x7e, 0xae, 0xf7, 0xcf,
                                 0x15, 0xd2, 0x15, 0x4f,
                                 0x16, 0xa6, 0x88, 0x3c])
-        aes = AES(master_key)
+        aes = AES(turnMatrixLd(master_key))
 
         expected_output = bytearray([0x2b, 0x28, 0xab, 0x9, 0x7e, 0xae, 0xf7, 0xcf, 0x15, 0xd2, 0x15, 0x4f, 0x16, 0xa6, 0x88, 0x3c, 
                                     0xa0, 0x88, 0x23, 0x2a, 0xfa, 0x54, 0xa3, 0x6c, 0xfe, 0x2c, 0x39, 0x76, 0x17, 0xb1, 0x39, 0x5, 
@@ -627,9 +626,11 @@ class AesTestMethods(unittest.TestCase):
                                     0xac, 0x19, 0x28, 0x57, 0x77, 0xfa, 0xd1, 0x5c, 0x66, 0xdc, 0x29, 0x0, 0xf3, 0x21, 0x41, 0x6e, 
                                     0xd0, 0xc9, 0xe1, 0xb6, 0x14, 0xee, 0x3f, 0x63, 0xf9, 0x25, 0xc, 0xc, 0xa8, 0x89, 0xc8, 0xa6])
 
-        round_keys = aes._expand_key(master_key)
 
-        # for i, round_key in enumerate(round_keys):
+
+
+
+        # for i, round_key in enumerate(matrix2bytes(aes._key_matrices)):
         #     round_key_bytes = bytearray()
         #     for column in round_key:
         #         round_key_bytes.extend(column)
@@ -638,7 +639,7 @@ class AesTestMethods(unittest.TestCase):
         #         print("{:02x} ".format(byte), end="")
         #     print()  
 
-        #self.assertEqual(round_keys, expected_output)
+        #self.assertEqual(matrix2bytes(aes._key_matrices), expected_output)
 
 
 if __name__ == '__main__':
