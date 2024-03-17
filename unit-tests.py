@@ -571,12 +571,8 @@ class AesTestMethods(unittest.TestCase):
         print("---")
         print("---")
 
-
-
     #LD test end to end correct inversion, calling python with same values in UT for C(I have above)
     def test_platground_inverted(self):
-
-
 
         plaintext = bytearray([0x32, 0x88, 0x31, 0xe0,
                                0x43, 0x5a, 0x31, 0x37,
@@ -604,7 +600,6 @@ class AesTestMethods(unittest.TestCase):
         print([hex(byte) for byte in turnMatrixLd_reverse(decrypted_plaintext)])
 
 
-
     #TEST EXPAND KEY IN PYTHON
     def test_platground_expand(self):
 
@@ -625,9 +620,6 @@ class AesTestMethods(unittest.TestCase):
                                     0xea, 0xb5, 0x31, 0x7f, 0xd2, 0x8d, 0x2b, 0x8d, 0x73, 0xba, 0xf5, 0x29, 0x21, 0xd2, 0x60, 0x2f, 
                                     0xac, 0x19, 0x28, 0x57, 0x77, 0xfa, 0xd1, 0x5c, 0x66, 0xdc, 0x29, 0x0, 0xf3, 0x21, 0x41, 0x6e, 
                                     0xd0, 0xc9, 0xe1, 0xb6, 0x14, 0xee, 0x3f, 0x63, 0xf9, 0x25, 0xc, 0xc, 0xa8, 0x89, 0xc8, 0xa6])
-
-
-
 
 
         # for i, round_key in enumerate(matrix2bytes(aes._key_matrices)):
