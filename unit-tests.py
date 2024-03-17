@@ -1,7 +1,7 @@
 import unittest
 import ctypes
 import random
-from aes import sub_bytes, sub_bytes_ld, shift_rows_ld, bytes2matrix, matrix2bytes, mix_columns_ld
+from aes import sub_bytes, sub_bytes_ld, shift_rows_ld, bytes2matrix, matrix2bytes, mix_columns_ld, mix_columns
 from ctypes import CDLL
 libc = CDLL("libc.so.6")  
 
@@ -214,38 +214,21 @@ class AesTestMethods(unittest.TestCase):
         self.assertEqual(block.raw[:-1], expected_output)#LD Asserting the match. I did exclude the null terminator "[:-1]". 
         print("--- UT PASSED  test_mix_columns")
 
-    
-
     def test_mix_columns_python(self):
         plaintext = bytearray([0xd4, 0xe0, 0xb8, 0x1e,
                                 0xbf, 0xb4, 0x41, 0x27,
                                 0x5d, 0x52, 0x11, 0x98,
                                 0x30, 0xae, 0xf1, 0xe5]) 
-        flipped = turnMatrixLd(plaintext)
-        
-        # print(f"LD print FLIPPED")
-        # for byte in flipped:
-        #     print(format(byte, '02x'), end=' ')
-        # print(f"TEST FLIPPED as MATRIX")
-        # for row in bytes2matrix(flipped):
-        #     print([hex(byte) for byte in row])
-
-        expected_output_python = mix_columns_ld(bytes2matrix(flipped))  
-
-        expected_output_python_bytes = turnMatrixLd_reverse(matrix2bytes(expected_output_python))
-
-        # print(f"LD ret ")
-        # for byte in expected_output_python_bytes:
-        #     print(format(byte, '02x'), end=' ')
-        # print(f"P ONLY return")
-        # for row in expected_output_python_bytes:
-        #     print(format(row, '02x'), end=' ')
-
         expected_output = bytearray([0x04, 0xe0, 0x48, 0x28,
                                     0x66, 0xcb, 0xf8, 0x06,
                                     0x81, 0x19, 0xd3, 0x26,
                                     0xe5, 0x9a, 0x7a, 0x4c])
-        self.assertEqual(expected_output_python_bytes, expected_output)
+
+        flipped = turnMatrixLd(plaintext)
+        bytesListToMatrix = bytes2matrix(flipped)
+        mix_columns(bytesListToMatrix)  
+        self.assertEqual(expected_output, turnMatrixLd_reverse(matrix2bytes(bytesListToMatrix)))
+
         print("--- UT PASSED  test_mix_columns_python")
 
 
@@ -525,6 +508,28 @@ class AesTestMethods(unittest.TestCase):
         self.assertEqual(ld_dencripted_block_bytes, expected_output)
         print("--- UT PASSED test_aes_decrypt_block")
 
+    ############################################################################################################
+    # PLAYGROUND
+    ############################################################################################################
+
+    def test_platground(self):
+        expected_output_python_bytes  = bytearray([0x04, 0xe0, 0x48, 0x28,
+                            0x66, 0xcb, 0xf8, 0x06,
+                            0x81, 0x19, 0xd3, 0x26,
+                            0xe5, 0x9a, 0x7a, 0x4c])
+                
+        plaintext = bytearray([0xd4, 0xe0, 0xb8, 0x1e,
+                                0xbf, 0xb4, 0x41, 0x27,
+                                0x5d, 0x52, 0x11, 0x98,
+                                0x30, 0xae, 0xf1, 0xe5]) 
+        
+        flipped = turnMatrixLd(plaintext)
+        bytesListToMatrix = bytes2matrix(flipped)
+        mix_columns(bytesListToMatrix)  
+        self.assertEqual(expected_output_python_bytes, turnMatrixLd_reverse(matrix2bytes(bytesListToMatrix)))
+
+
+    print("--- UT END PLAYGROUND")
 
 
 if __name__ == '__main__':
