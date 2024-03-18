@@ -1,6 +1,7 @@
 import unittest
 import ctypes
 import random
+import copy
 from aes.aes import sub_bytes, shift_rows, bytes2matrix, matrix2bytes, mix_columns, inv_mix_columns, inv_shift_rows, add_round_key, AES
 from ctypes import CDLL
 libc = CDLL("libc.so.6")
@@ -591,19 +592,28 @@ class AesTestMethods(unittest.TestCase):
         self.assertEqual(expected_output, turnMatrixLd_reverse(matrix2bytes(input_status)))
 
 
-#     def test_add_round_key_both(self):
-#             num_attempts = 0
-#             for _ in range(3):
-#                 num_attempts += 1
+    def test_add_round_key_both(self):
+            num_attempts = 0
+            for _ in range(3):
+                num_attempts += 1
 
-#                 text = generate_random_plaintext(16)
-#                 key = generate_random_plaintext(16)
+                text = generate_random_plaintext(16)
+                key = generate_random_plaintext(16)
 
-# text_c = 
-#     #LD C part
-#                 rijndael.add_round_key(inputToProcessTextBuffer, cipher_key_buffer)
+                text_c = ctypes.create_string_buffer(bytes(text))
+                key_c = ctypes.create_string_buffer(bytes(key))
 
+                #LD C part
+                rijndael.add_round_key(text_c, key_c)
 
+                #LD python part
+                text_p = bytes2matrix(turnMatrixLd(text))
+                input_key =  bytes2matrix(turnMatrixLd(key))
+                add_round_key(text_p, input_key)
+
+                self.assertEqual(text_c.raw[:-1], turnMatrixLd_reverse(matrix2bytes(text_p)))
+                #print(f"--- LOOP test_add_round_key_both n. {num_attempts} with hexadecimal: {[hex(byte) for byte in text_c.raw[:-1]]}")
+                
     ############################################################################################################
     # FULL ENCRIPTION TEST
     ############################################################################################################
@@ -758,58 +768,6 @@ class AesTestMethods(unittest.TestCase):
         # print("decrypted_plaintext:")
         # print([hex(byte) for byte in turnMatrixLd_reverse(decrypted_plaintext)])
 
-
-    #TEST EXPAND KEY IN PYTHON
-    def test_platground_expand(self):
-
-        master_key = bytearray([0x2b, 0x28, 0xab, 0x09,
-                                0x7e, 0xae, 0xf7, 0xcf,
-                                0x15, 0xd2, 0x15, 0x4f,
-                                0x16, 0xa6, 0x88, 0x3c])
-        aes = AES(turnMatrixLd(master_key))
-
-        expected_output = bytearray([0x2b, 0x28, 0xab, 0x9,
-                                     0x7e, 0xae, 0xf7, 0xcf,
-                                     0x15, 0xd2, 0x15, 0x4f,
-                                     0x16, 0xa6, 0x88, 0x3c,
-                                    0xa0, 0x88, 0x23, 0x2a, 0xfa, 0x54, 0xa3, 0x6c, 0xfe, 0x2c, 0x39, 0x76, 0x17, 0xb1, 0x39, 0x5,
-                                    0xf2, 0x7a, 0x59, 0x73, 0xc2, 0x96, 0x35, 0x59, 0x95, 0xb9, 0x80, 0xf6, 0xf2, 0x43, 0x7a, 0x7f,
-                                    0x3d, 0x47, 0x1e, 0x6d, 0x80, 0x16, 0x23, 0x7a, 0x47, 0xfe, 0x7e, 0x88, 0x7d, 0x3e, 0x44, 0x3b,
-                                    0xef, 0xa8, 0xb6, 0xdb, 0x44, 0x52, 0x71, 0xb, 0xa5, 0x5b, 0x25, 0xad, 0x41, 0x7f, 0x3b, 0x0,
-                                    0xd4, 0x7c, 0xca, 0x11, 0xd1, 0x83, 0xf2, 0xf9, 0xc6, 0x9d, 0xb8, 0x15, 0xf8, 0x87, 0xbc, 0xbc,
-                                    0x6d, 0x11, 0xdb, 0xca, 0x88, 0xb, 0xf9, 0x0, 0xa3, 0x3e, 0x86, 0x93, 0x7a, 0xfd, 0x41, 0xfd,
-                                    0x4e, 0x5f, 0x84, 0x4e, 0x54, 0x5f, 0xa6, 0xa6, 0xf7, 0xc9, 0x4f, 0xdc, 0xe, 0xf3, 0xb2, 0x4f,
-                                    0xea, 0xb5, 0x31, 0x7f, 0xd2, 0x8d, 0x2b, 0x8d, 0x73, 0xba, 0xf5, 0x29, 0x21, 0xd2, 0x60, 0x2f,
-                                    0xac, 0x19, 0x28, 0x57, 0x77, 0xfa, 0xd1, 0x5c, 0x66, 0xdc, 0x29, 0x0, 0xf3, 0x21, 0x41, 0x6e,
-                                    0xd0, 0xc9, 0xe1, 0xb6, 0x14, 0xee, 0x3f, 0x63, 0xf9, 0x25, 0xc, 0xc, 0xa8, 0x89, 0xc8, 0xa6])
-
-
-        concatenated_bytes_formatted = bytearray()  #LD I will store here the formatted bytes
-        concatenated_bytes = bytearray()
-        byte_count = 0  
-
-        for idx, matrix in enumerate(aes._key_matrices):
-            for row in matrix:
-                for byte in row:
-                    concatenated_bytes.append(byte)  
-                    byte_count += 1 
-                    if byte_count == 16:  #LD I get here when I have a chunk of 16 appended
-                        #print(f"LD number of current group: {idx}:")
-                        #print("LD current group of 16 bytes:", end=' ')
-                        formatted_bytes = turnMatrixLd(concatenated_bytes)  #LD going to turn the current 16 bytes using "turnMatrixLd"
-                        for b in formatted_bytes:
-                            concatenated_bytes_formatted.append(b)  #LD append byte by byte what is returned by "turnMatrixLd"
-                            #print(hex(b), end=' ')  
-                        #print()  #LD just adding a line for reading better this thing
-                        #Ld need to reset both
-                        byte_count = 0  
-                        concatenated_bytes = bytearray()  
-
-        # LD final test on flat
-        # for byte in concatenated_bytes_formatted:
-        #     print(hex(byte), end=' ')
-
-        self.assertEqual(concatenated_bytes_formatted, expected_output)
 
 if __name__ == '__main__':
     unittest.main()
