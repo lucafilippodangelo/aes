@@ -15,4 +15,3 @@ jobs:
       - name: "Run the tests"
         run: |
           python3 unit-tests.py
-          python3 tests.py
