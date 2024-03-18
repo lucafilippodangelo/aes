@@ -615,9 +615,10 @@ class AesTestMethods(unittest.TestCase):
                 #print(f"--- LOOP test_add_round_key_both n. {num_attempts} with hexadecimal: {[hex(byte) for byte in text_c.raw[:-1]]}")
                 
     ############################################################################################################
-    # FULL ENCRIPTION TEST
+    ### Full encription in C ###
+    # CONTENT:
+    # the two tests are doing exact same thing but with different values
     ############################################################################################################
-
 
     def test_aes_encrypt_block(self):
         plaintext = bytearray([0x32, 0x88, 0x31, 0xe0,
@@ -633,12 +634,7 @@ class AesTestMethods(unittest.TestCase):
         key_buffer = ctypes.create_string_buffer(bytes(key))
 
         ld_encripted_block_ptr = rijndael.aes_encrypt_block(ctypes.cast(plaintext_buffer, ctypes.POINTER(ctypes.c_ubyte)),ctypes.cast(key_buffer, ctypes.POINTER(ctypes.c_ubyte)))
-
         ld_encripted_block_bytes = bytearray(ctypes.cast(ld_encripted_block_ptr, ctypes.POINTER(ctypes.c_ubyte * 16)).contents)
-
-
-        # sss = [hex(byte) for byte in ld_encripted_block_bytes]
-        # print(sss)
 
         expected_output = bytearray([0x39, 0x02, 0xdc, 0x19,
                                     0x25, 0xdc, 0x11, 0x6a,
@@ -650,7 +646,7 @@ class AesTestMethods(unittest.TestCase):
 
     # test with other parms I got from internet https://www.kavaliro.com/wp-content/uploads/2014/03/AES.pdf
     # I have flipped the values
-    def test_aes_encrypt_block_two(self):
+    def test_aes_encrypt_block_Numner_two(self):
         plaintext = bytearray([0x54, 0x4f, 0x4e, 0x20,
                                0x77, 0x6E, 0x69, 0x54,
                                0x6f, 0x65, 0x6e, 0x77,
@@ -664,7 +660,6 @@ class AesTestMethods(unittest.TestCase):
         key_buffer = ctypes.create_string_buffer(bytes(key))
 
         ld_encripted_block_ptr = rijndael.aes_encrypt_block(ctypes.cast(plaintext_buffer, ctypes.POINTER(ctypes.c_ubyte)),ctypes.cast(key_buffer, ctypes.POINTER(ctypes.c_ubyte)))
-
         ld_encripted_block_bytes = bytearray(ctypes.cast(ld_encripted_block_ptr, ctypes.POINTER(ctypes.c_ubyte * 16)).contents)
 
 
@@ -680,9 +675,8 @@ class AesTestMethods(unittest.TestCase):
         #print("--- UT PASSED aes_encrypt_block")
 
     ############################################################################################################
-    # FULL DE-CRIPTION TEST
+    ### Full decription in C ###
     ############################################################################################################
-
 
     def test_aes_decrypt_block(self):
         ciphertext = bytearray([0x39, 0x02, 0xdc, 0x19,
@@ -698,7 +692,6 @@ class AesTestMethods(unittest.TestCase):
         key_buffer = ctypes.create_string_buffer(bytes(key))
 
         ld_dencripted_block_ptr = rijndael.aes_decrypt_block(ctypes.cast(ciphertext_buffer, ctypes.POINTER(ctypes.c_ubyte)),ctypes.cast(key_buffer, ctypes.POINTER(ctypes.c_ubyte)))
-
         ld_dencripted_block_bytes = bytearray(ctypes.cast(ld_dencripted_block_ptr, ctypes.POINTER(ctypes.c_ubyte * 16)).contents)
 
         expected_output = bytearray([0x32, 0x88, 0x31, 0xe0,
@@ -711,11 +704,11 @@ class AesTestMethods(unittest.TestCase):
 
 
     ############################################################################################################
-    # PLAYGROUND
+    ### Full encription->decription in python
     ############################################################################################################
 
     #LD test end to end with main values
-    def test_platground(self):
+    def test_python_encription_decription(self):
 
         integer_list = [1, 2,  3,  4,  5,  6,  7,  8, 9, 10, 11, 12, 13, 14, 15, 16]
         plaintext = bytearray(integer_list)
@@ -723,25 +716,27 @@ class AesTestMethods(unittest.TestCase):
         integer_list2 = [50, 20, 46, 86, 67, 9, 70, 27, 75, 17, 51, 17, 4, 8, 6, 99]
         master_key = bytearray(integer_list2)
 
-        aes = AES(turnMatrixLd(master_key))#LD ogni 4 bytes e' una colonna(visualizzata) ruotata in senso antiorario di 90 gradi
+        aes = AES(turnMatrixLd(master_key))
 
         ciphertext = aes.encrypt_block(turnMatrixLd(plaintext)) #LD ogni 4 bytes e' una colonna(visualizzata) ruotata in senso antiorario di 90 gradi
         decrypted_plaintext = aes.decrypt_block(ciphertext)
 
-        # print("---XXX")
-        # print("plaintext:")
-        # print([hex(byte) for byte in plaintext])
+        #print("---")
+        #print("plaintext:")
+        #print([hex(byte) for byte in plaintext])
 
-        # print("ciphertext:")
-        # print([hex(byte) for byte in turnMatrixLd_reverse(ciphertext)])
+        #print("ciphertext:")
+        #print([hex(byte) for byte in turnMatrixLd_reverse(ciphertext)])
 
-        # print("decrypted_plaintext:")
-        # print([hex(byte) for byte in turnMatrixLd_reverse(decrypted_plaintext)])
-        # print("---")
-        # print("---")
+        #print("decrypted_plaintext:")
+        #print([hex(byte) for byte in turnMatrixLd_reverse(decrypted_plaintext)])
+        #print("---")
+        #print("---")
+
+        self.assertEqual(plaintext, turnMatrixLd_reverse(decrypted_plaintext))
 
     #LD test end to end correct inversion, calling python with same values in UT for C(I have above)
-    def test_platground_inverted(self):
+    def test_python_encription_decription_two(self):
 
         plaintext = bytearray([0x32, 0x88, 0x31, 0xe0,
                                0x43, 0x5a, 0x31, 0x37,
@@ -768,6 +763,13 @@ class AesTestMethods(unittest.TestCase):
         # print("decrypted_plaintext:")
         # print([hex(byte) for byte in turnMatrixLd_reverse(decrypted_plaintext)])
 
+        self.assertEqual(plaintext, turnMatrixLd_reverse(decrypted_plaintext))
 
+    #***********************************************************************************************************
+    ############################################################################################################
+    ### FINAL MEGA TEST: 3 rounds of encription->decription in C&python with comparison test at each step
+    ############################################################################################################
+    #***********************************************************************************************************
+          
 if __name__ == '__main__':
     unittest.main()
