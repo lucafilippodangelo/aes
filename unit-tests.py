@@ -721,17 +721,17 @@ class AesTestMethods(unittest.TestCase):
         ciphertext = aes.encrypt_block(turnMatrixLd(plaintext)) #LD ogni 4 bytes e' una colonna(visualizzata) ruotata in senso antiorario di 90 gradi
         decrypted_plaintext = aes.decrypt_block(ciphertext)
 
-        #print("---")
-        #print("plaintext:")
-        #print([hex(byte) for byte in plaintext])
+        # print("---")
+        # print("plaintext:")
+        # print([hex(byte) for byte in plaintext])
 
-        #print("ciphertext:")
-        #print([hex(byte) for byte in turnMatrixLd_reverse(ciphertext)])
+        # print("ciphertext:")
+        # print([hex(byte) for byte in turnMatrixLd_reverse(ciphertext)])
 
-        #print("decrypted_plaintext:")
-        #print([hex(byte) for byte in turnMatrixLd_reverse(decrypted_plaintext)])
-        #print("---")
-        #print("---")
+        # print("decrypted_plaintext:")
+        # print([hex(byte) for byte in turnMatrixLd_reverse(decrypted_plaintext)])
+        # print("---")
+        # print("---")
 
         self.assertEqual(plaintext, turnMatrixLd_reverse(decrypted_plaintext))
 
@@ -770,6 +770,56 @@ class AesTestMethods(unittest.TestCase):
     ### FINAL MEGA TEST: 3 rounds of encription->decription in C&python with comparison test at each step
     ############################################################################################################
     #***********************************************************************************************************
-          
+
+    def test_full_encryption_decryption_both(self):
+            num_attempts = 0
+            for _ in range(3):
+                num_attempts += 1
+
+                plaintext = generate_random_plaintext(16)
+                key_1 = generate_random_plaintext(16)
+
+                # integer_list = [1, 2,  3,  4,  5,  6,  7,  8, 9, 10, 11, 12, 13, 14, 15, 16]
+                # plaintext = bytearray(integer_list)
+
+                # integer_list2 = [50, 20, 46, 86, 67, 9, 70, 27, 75, 17, 51, 17, 4, 8, 6, 99]
+                # key_1 = bytearray(integer_list2) # byte interpretation of integers
+    
+                #print(f"--- LOOP ENCRIPTION n. {num_attempts} key:")
+                #hex_list = [hex(byte) for byte in plaintext] #LD just convert each integer or ascii if reading bytearray to hexadecimal directly
+                #print(hex_list)
+
+
+                #LD ENCRIPTION C 
+                plaintext_buffer = ctypes.create_string_buffer(bytes(plaintext))
+                key_buffer = ctypes.create_string_buffer(bytes(key_1))
+                ld_encripted_block_ptr = rijndael.aes_encrypt_block(ctypes.cast(plaintext_buffer, ctypes.POINTER(ctypes.c_ubyte)),ctypes.cast(key_buffer, ctypes.POINTER(ctypes.c_ubyte)))
+                ciphertext_c = bytearray(ctypes.cast(ld_encripted_block_ptr, ctypes.POINTER(ctypes.c_ubyte * 16)).contents)
+
+                #LD ENCRIPTION Python 
+                aes = AES(turnMatrixLd(key_1))
+                ciphertext_p = aes.encrypt_block(turnMatrixLd(plaintext)) 
+
+                #LD ENCRIPTION ciphertext match test
+                self.assertEqual(ciphertext_c, turnMatrixLd_reverse(ciphertext_p))
+                #print(f"--- LOOP ENCRIPTION test_full_encryption_decryption_both n. {num_attempts} matched: {[hex(byte) for byte in ciphertext_c]}")
+                
+                #LD DECRIPTION C
+                ciphertext_buffer = ctypes.create_string_buffer(bytes(ciphertext_c))
+                key_buffer_two = ctypes.create_string_buffer(bytes(key_1))
+                ld_dencripted_block_ptr = rijndael.aes_decrypt_block(ctypes.cast(ciphertext_buffer, ctypes.POINTER(ctypes.c_ubyte)),ctypes.cast(key_buffer_two, ctypes.POINTER(ctypes.c_ubyte)))
+                ld_dencripted_block_bytes = bytearray(ctypes.cast(ld_dencripted_block_ptr, ctypes.POINTER(ctypes.c_ubyte * 16)).contents)
+
+                #LD DECRIPTION Python
+                decrypted_plaintext = aes.decrypt_block(ciphertext_p)
+
+                #LD DECRIPTION match test
+                self.assertEqual(ld_dencripted_block_bytes, turnMatrixLd_reverse(decrypted_plaintext))
+                #print(f"--- LOOP DECRIPTION test_full_encryption_decryption_both n. {num_attempts} decripted:")
+                hex_list_two = [hex(byte) for byte in ld_dencripted_block_bytes] #LD just convert each integer to hexadecimal directly
+                #print(hex_list_two)
+                # print(" - - - ")
+                # print(" - - - ")
+
 if __name__ == '__main__':
     unittest.main()
