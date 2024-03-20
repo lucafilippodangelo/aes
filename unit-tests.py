@@ -795,11 +795,9 @@ class AesTestMethods(unittest.TestCase):
                 key_buffer = ctypes.create_string_buffer(bytes(key_1))
                 ld_encripted_block_ptr = rijndael.aes_encrypt_block(ctypes.cast(plaintext_buffer, ctypes.POINTER(ctypes.c_ubyte)),ctypes.cast(key_buffer, ctypes.POINTER(ctypes.c_ubyte)))
                 ciphertext_c = bytearray(ctypes.cast(ld_encripted_block_ptr, ctypes.POINTER(ctypes.c_ubyte * 16)).contents)
-
                 #LD ENCRIPTION Python 
                 aes = AES(turnMatrixLd(key_1))
                 ciphertext_p = aes.encrypt_block(turnMatrixLd(plaintext)) 
-
                 #LD ENCRIPTION ciphertext match test
                 self.assertEqual(ciphertext_c, turnMatrixLd_reverse(ciphertext_p))
                 #print(f"--- LOOP ENCRIPTION test_full_encryption_decryption_both n. {num_attempts} matched: {[hex(byte) for byte in ciphertext_c]}")

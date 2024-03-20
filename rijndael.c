@@ -487,28 +487,28 @@ void XOR_2(unsigned char *result, unsigned char *a, unsigned char *b) {
 //LD added logic to generate the whole array to return
 unsigned char *expand_key(unsigned char *cipher_key)
 {
-    unsigned char *expanded_key = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE * 11);//unsigned char *expanded_key = malloc(176 * sizeof(unsigned char));
+    //LD calloc allocate memory and initialise to zero by default. No need to use malloc and then initialise to zero 
+    //in a second step.
+    unsigned char *expanded_key = (unsigned char *)calloc(BLOCK_SIZE * 11, sizeof(unsigned char));
     
-    // printf("LD EXPANDED KEY print input cipher_ke:\n");
-    // ld_print_128bit_block(cipher_key);
-
-    // LD https://www.quora.com/Is-malloc-initializing-allocated-array-to-zero-C-initialization-malloc-development
-    for (int i = 0; i < 176; i++)
-    {
-        expanded_key[i] = 0;
-    }
-    // Copy Cipher Key as the first key in the Expanded Key
+    //LD cipher_key first key of expanded_key
     for (int i = 0; i < 16; i++)
     {
         expanded_key[i] = cipher_key[i];
     }
 
+    //LD moved declaration outside for to avoid repeated declaration
+    unsigned char temp_calc_1[4];
+    unsigned char temp_calc_2[4];
+    unsigned char temp_calc_3[4];
+    unsigned char temp_calc_4[4];
+    unsigned char temp_col2[4];
+    unsigned char temp_col3[4];
+    unsigned char temp_col4[4];
+    unsigned char temp_columnExtractedFromKey[4];
+
     for (int i = 0; i < 10; i++)
     {
-        unsigned char temp_calc_1[4];
-        unsigned char temp_calc_2[4];
-        unsigned char temp_calc_3[4];
-        unsigned char temp_calc_4[4];
         // LD ROTWORD
         RotWord(temp_calc_1, expanded_key, i);
         // LD SUBBYTES
@@ -520,41 +520,46 @@ unsigned char *expand_key(unsigned char *cipher_key)
         XOR(temp_calc_4, temp_calc_1, temp_calc_2, temp_calc_3);
         
 		// LD MAKING OF COL 2. COL 2 is the XOR of col2 of key in input with col 1 just calculated
-        unsigned char temp_columnExtractedFromKey[4];
         ldExtractColumnFromKey(2, expanded_key, i, temp_columnExtractedFromKey);
-        unsigned char temp_col2[4];
         XOR_2(temp_col2, temp_columnExtractedFromKey, temp_calc_4);
         
 		// LD MAKING OF COL 3. COL 3 is the XOR of col3 of key in input with col 2 just calculated
         ldExtractColumnFromKey(3, expanded_key, i, temp_columnExtractedFromKey);
-        unsigned char temp_col3[4];
         XOR_2(temp_col3, temp_columnExtractedFromKey, temp_col2);
         
 		// LD MAKING OF COL 4. COL 4 is the XOR of col4 of key in input with col 3 just calculated
         ldExtractColumnFromKey(4, expanded_key, i, temp_columnExtractedFromKey);
-        unsigned char temp_col4[4];
         XOR_2(temp_col4, temp_columnExtractedFromKey, temp_col3);
 			
         // Assign temporary columns to expanded keys
-        for (int j = 0; j < 4; j++)
-        {
+        // for (int j = 0; j < 4; j++)
+        // {
+        //     int z = ((i + 1) * BLOCK_SIZE) + (j * 4);
+        //     expanded_key[z] = temp_calc_4[j];
+        // }
+        // for (int j = 0; j < 4; j++)
+        // {
+        //     int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 1;
+        //     expanded_key[z] = temp_col2[j];
+        // }
+        // for (int j = 0; j < 4; j++)
+        // {
+        //     int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 2;
+        //     expanded_key[z] = temp_col3[j];
+        // }
+        // for (int j = 0; j < 4; j++)
+        // {
+        //     int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 3;
+        //     expanded_key[z] = temp_col4[j];
+        // }
+
+        //LD some optinization.. same logic above where "z" is the base index. Moving everything under same FOR
+        for (int j = 0; j < 4; j++) {
             int z = ((i + 1) * BLOCK_SIZE) + (j * 4);
             expanded_key[z] = temp_calc_4[j];
-        }
-        for (int j = 0; j < 4; j++)
-        {
-            int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 1;
-            expanded_key[z] = temp_col2[j];
-        }
-        for (int j = 0; j < 4; j++)
-        {
-            int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 2;
-            expanded_key[z] = temp_col3[j];
-        }
-        for (int j = 0; j < 4; j++)
-        {
-            int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 3;
-            expanded_key[z] = temp_col4[j];
+            expanded_key[z + 1] = temp_col2[j];
+            expanded_key[z + 2] = temp_col3[j];
+            expanded_key[z + 3] = temp_col4[j];
         }
     }
 
@@ -564,14 +569,14 @@ unsigned char *expand_key(unsigned char *cipher_key)
 }
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///// LD IN TEST
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*
  * The implementations of the functions declared in the
  * header file should go here
  */
 unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
+
+    //LD doing a copy of plaintext otherwise due to the current structure of main, I will end up  
+    //printing ciphertext values instead of plaintext
     unsigned char *temp_plaintext = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
     if (temp_plaintext == NULL) {
         fprintf(stderr, "LD temp_plaintext memory allocation issues\n");
@@ -606,11 +611,7 @@ unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
     shift_rows(temp_plaintext);
     add_round_key(temp_plaintext, round_keys + 10 * BLOCK_SIZE);
 
-    
-
-    //printf("LD IN FUNCTION check 001 \n");
     free(round_keys); //LD release allocated memory
-    //printf("LD IN FUNCTION check 002 \n");
 
     // printf("--- \n");
     // printf("--- LD ENCRIPTED aes_encrypt_block:\n");
@@ -625,6 +626,11 @@ unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
 }
 
 unsigned char *aes_decrypt_block(unsigned char *ciphertext, unsigned char *key) {
+
+    //LD allocating a slot of memory for the ciphertext generation. The pointer to ciphertext in
+    //input to this function. Since ciphertext is modified during decryption in main, 
+    //once the eoin's code in printing ciphertext after decryption, the sequence will print the decrypted plaintext, not the ciphertext.
+    // so to output the expected behaviour without touching main I needed to do a copy before decription.
     unsigned char *temp_ciphertext = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
     if (temp_ciphertext == NULL) {
         fprintf(stderr, "Memory allocation failed\n");
@@ -643,6 +649,11 @@ unsigned char *aes_decrypt_block(unsigned char *ciphertext, unsigned char *key) 
     //LD it's exactly all the way around!
 
     unsigned char *round_keys = expand_key(key);
+        if (round_keys == NULL) {
+        //LD free memory
+        free(temp_ciphertext);
+        return NULL;
+    }
 
     add_round_key(temp_ciphertext, round_keys + 10 * BLOCK_SIZE);
     invert_shift_rows(temp_ciphertext);
