@@ -1,4 +1,5 @@
 /*
+ * Luca Filippo D'Angelo - D23125106
  * TODO: Add your name and student number here, along with
  *       a brief description of this code.
  */
@@ -6,10 +7,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-// TODO: Any other files you need to include should go here
 #include "rijndael.h"
 
-// LD will be used across this CA
+
 const unsigned char s_box[256] = {
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
     0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
@@ -48,7 +48,6 @@ const unsigned char inv_s_box[256] = {
     0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D,
 };
 
-//LD using exact same round constants in "aes.py"
 const unsigned char r_con[40] = {
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -56,76 +55,60 @@ const unsigned char r_con[40] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-//LD just utility to see if this thing is working
-void ld_print_128bit_block(unsigned char *block)
-{
-    for (int i = 0; i < 4; i++)
-    {
-        for (int j = 0; j < 4; j++)
-        {
-            unsigned char value = BLOCK_ACCESS(block, i, j);
-            printf("%02x ", value);
-        }
-        printf("\n");
-    }
-}
-
-//LD just utility to see if this thing is working
-void print_hex_array(unsigned char *array, int size)
-{
-    for (int i = 0; i < size; i++)
-    {
-        printf("%02x ", array[i]);
-        if ((i + 1) % 4 == 0)
-        { printf("\n"); }//LD add line after a block of 4
-        
-        if ((i + 1) % 16 == 0) 
-        { printf("\n"); }//LD add line after every block of 16
-    }
-    if (size % 4 != 0)
-    {
-        printf("\n");
-    } //LD if no multiple of 4 adding another line
-}
-
 /*
  * Operations used when encrypting a block
  */
+
+/*
+ * Description:
+ * This function covers the sub byte transformation step of the AES algorithm
+ * Getting in input a pointer to a 4x4 matrix(in the case of this C implementation 
+ * it is an array where rows are represented sequentially).
+ * Iterate through each byte in a for loop. For each byte in block 
+ * gets the value of the byte "i" and assign to “index”, 
+ * then look for that value in s_box(substitution box), then just replace the 
+ * original byte in the input “block” with the value from the s_box.
+ * 
+ * It’s a substitution to add confusion to the data, as I understand it should be 
+ * harder to reverse engineer.
+ * 
+ * Inputs:
+ * this function is getting a pointer to an "unsigned char"
+ * 
+ * Outputs:
+ * there is no return, the function access and modify the memory location of 
+ * "block"(memory pointed by the pointer passed as input parm) 
+ */
 void sub_bytes(unsigned char *block) {
-    //strcpy(block, "Hello, world");
-
-    // printf("--- \n");
-    // printf("--- LD sub_bytes hexadecimal of the input:\n");
-    // for (int i = 0; i < 16; i++) {
-    //     printf("%02X ", block[i]); 
-    //     if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
-    //         printf("\n");
-    // }
-
-    for (int i = 0; i < 16; i++) {
-        unsigned char index = block[i]; //LD getting index of s_box for byte "i" I'm looping on
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        unsigned char index = block[i]; 
         block[i] = s_box[index];//LD swap original byte with value from the s_box
     }
-
-    // printf("--- \n");
-    // printf("--- LD sub_bytes hexadecimal of returned from sub_bytes:\n");
-    // for (int i = 0; i < 16; i++) {
-    //     printf("%02X ", block[i]);
-    //     if ((i + 1) % 4 == 0)
-    //         printf("\n");
-    // }
 }
 
+/**
+ * Description:
+ * Function to calculate the factorial of a number.
+ * this function gets in input a pointer to a 4x4 matrix(in the case of this C implementation 
+ * it is an array where rows are represented sequentially)and does a circular shift of bytes.
+ * The pattern is to unchange row one, row two does left shift of one byte,  row three does 
+ * left shift of two bytes, , row four does left shift of three bytes.
+ * In the code below I did simply use indexes of the input block to implement the assignments.
+ * “ In this way, each column of the output state of the ShiftRows step is composed of bytes from each column of the input state. “ 
+ * source: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
+ * 
+ * The scope of this step is then to create “diffusion”, spreading each byte in input to the 
+ * entire block in output.
+
+ * Inputs:
+ * this function is getting a pointer to an "unsigned char"
+ * 
+ * Outputs:
+ * there is no return, the function access and modify the memory location of 
+ * "block"(memory pointed by the pointer passed as input parm) 
+ */
 void shift_rows(unsigned char *block) {
     
-    // printf("--- \n");
-    // printf("--- LD shift_rows hexadecimal of the input:\n");
-    // for (int i = 0; i < 16; i++) {
-    //     printf("%02X ", block[i]); 
-    //     if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
-    //         printf("\n");
-    // }
-
     unsigned char temp;
     //LD there is a fancy implementation here https://github.com/m3y54m/aes-in-c#aes-operations-subbytes-shiftrow-mixcolumn-and-addroundkey
 
@@ -140,7 +123,6 @@ void shift_rows(unsigned char *block) {
     temp = block[8];
     block[8] = block[10];
     block[10] = temp;
-
     temp = block[9];
     block[9] = block[11];
     block[11] = temp;
@@ -151,14 +133,6 @@ void shift_rows(unsigned char *block) {
     block[15] = block[14];
     block[14] = block[13];
     block[13] = temp;
-
-    // printf("--- \n");
-    // printf("--- LD shift_rows hexadecimal of return:\n");
-    // for (int i = 0; i < 16; i++) {
-    //     printf("%02X ", block[i]);
-    //     if ((i + 1) % 4 == 0)
-    //         printf("\n");
-    // }
 }
 
 ///////
@@ -209,8 +183,6 @@ unsigned char galois_multiplication(unsigned char a, unsigned char b)
     }
     return p;
 }
-
-
 
 void mix_columns(unsigned char *state)
 {
@@ -281,7 +253,7 @@ void invert_sub_bytes(unsigned char *block) {
     //         printf("\n");
     // }
 
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < BLOCK_SIZE; i++) {
         unsigned char index = block[i]; //LD getting index of s_box for byte "i" I'm looping on
         block[i] = inv_s_box[index];//LD swap original byte with value from the inv_s_box
     }
@@ -394,7 +366,7 @@ void add_round_key(unsigned char *block, unsigned char *round_key) {
     //     0x98, 0xBA, 0xDC, 0xFE
     // };
     
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < BLOCK_SIZE; i++) {
         block[i] ^= round_key[i];
     }
 
@@ -492,7 +464,7 @@ unsigned char *expand_key(unsigned char *cipher_key)
     unsigned char *expanded_key = (unsigned char *)calloc(BLOCK_SIZE * 11, sizeof(unsigned char));
     
     //LD cipher_key first key of expanded_key
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < BLOCK_SIZE; i++)
     {
         expanded_key[i] = cipher_key[i];
     }
