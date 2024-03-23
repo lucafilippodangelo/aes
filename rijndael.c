@@ -88,7 +88,6 @@ void sub_bytes(unsigned char *block) {
 
 /**
  * Description:
- * Function to calculate the factorial of a number.
  * this function gets in input a pointer to a 4x4 matrix(in the case of this C implementation 
  * it is an array where rows are represented sequentially)and does a circular shift of bytes.
  * The pattern is to unchange row one, row two does left shift of one byte,  row three does 
@@ -255,31 +254,30 @@ void mixColumn(unsigned char *column)
 /*
  * Operations used when decrypting a block
  */
-void invert_sub_bytes(unsigned char *block) {
-      //strcpy(block, "Hello, world");
 
-    // printf("--- \n");
-    // printf("--- LD sub_bytes hexadecimal of the input:\n");
-    // for (int i = 0; i < 16; i++) {
-    //     printf("%02X ", block[i]); 
-    //     if ((i + 1) % 4 == 0)//LD I print 4 per line instead of 16 https://stackoverflow.com/questions/49242874/how-to-print-contents-of-buffer-in-c
-    //         printf("\n");
-    // }
-
+/**
+ * Description:
+ * what is happening here is the inverse transformation of "sub_bytes" by using a different substitution table -> "inv_s_box".
+ * This method is used in the decryption method.
+ * Eoin please refer to "sub_bytes" function description for more details :) , just avoiding to copy pasting same content.
+ *
+ */
+void invert_sub_bytes(unsigned char *block)
+{
     for (int i = 0; i < BLOCK_SIZE; i++) {
-        unsigned char index = block[i]; //LD getting index of s_box for byte "i" I'm looping on
-        block[i] = inv_s_box[index];//LD swap original byte with value from the inv_s_box
+        unsigned char index = block[i]; 
+        block[i] = inv_s_box[index];
     }
-
-    // printf("--- \n");
-    // printf("--- LD sub_bytes hexadecimal of returned from sub_bytes:\n");
-    // for (int i = 0; i < 16; i++) {
-    //     printf("%02X ", block[i]);
-    //     if ((i + 1) % 4 == 0)
-    //         printf("\n");
-    // }
 }
 
+/**
+ * Description:
+ * this function perform the inverse transformation of "shift_rows". rotation this time is to the right. Same rows interested(n.2,n.3,n.4).
+ * In terms of code and logic it is pretty basic and static, used same approach as described in "shift_rows".
+ * 
+ * Eoin, I know that this code is not prone for extension but for this CA I did focus on making things working
+ * without thinking to handle in a second time matrix 6x6 etc..
+ */
 void invert_shift_rows(unsigned char *block) {
       unsigned char temp;
 
@@ -294,7 +292,6 @@ void invert_shift_rows(unsigned char *block) {
     temp = block[8];
     block[8] = block[10];
     block[10] = temp;
-
     temp = block[9];
     block[9] = block[11];
     block[11] = temp;
@@ -307,6 +304,12 @@ void invert_shift_rows(unsigned char *block) {
     block[12] = temp;
 }
 
+/**
+ * Description:
+ * similarly to any methods in this "decriptiong" methods section, "invert_mix_columns" perform exactly the opposite of
+ * "mix_columns". It's the inverse process.
+ * Iterative processes are pretty similar if not identical to what described in summary of function "mix_columns"
+ */
 void invert_mix_columns(unsigned char *block) {
 
     int i, j;
@@ -332,6 +335,13 @@ void invert_mix_columns(unsigned char *block) {
     }
 }
 
+/**
+ * Description:
+ * this function is called from "invert_mix_columns", goal of this logic is to operate on the column in input(passing a pointer to an unsigned char).
+ * so to the column is applied a series of Galois multiplications and XOR operations 
+ * to each element in the column, then updates the column with the result.
+ * 
+ */
 void invMixColumn(unsigned char *column)
 {
     unsigned char cpy[4];
