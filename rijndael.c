@@ -59,7 +59,7 @@ const unsigned char r_con[40] = {
  * Operations used when encrypting a block
  */
 
-/*
+/**
  * Description:
  * This function covers the sub byte transformation step of the AES algorithm
  * Getting in input a pointer to a 4x4 matrix(in the case of this C implementation 
@@ -135,37 +135,35 @@ void shift_rows(unsigned char *block) {
     block[13] = temp;
 }
 
-///////
-//LD resource https://github.com/m3y54m/aes-in-c/tree/main/src
-///////
-
+//LD "mix columns" general description
+/**
+ * Description:
+ * for the "mix columns" part I have used the resources:
+ * - https://github.com/m3y54m/aes-in-c/tree/main/src
+ * - https://en.wikipedia.org/wiki/Rijndael_MixColumns
+ * 
+ * the mix of the columns is one of the steps of encryption(entry point mix_columns)/decription(entry point invert_mix_columns). 
+ * What this step basically does is to multiply each column of the input block(getting in input a pointer to an unsigned char) 
+ * with a fixed matrix(Gailos field). 
+ * The goal of this step is diffusion. There is a great explanation here https://en.wikipedia.org/wiki/Confusion_and_diffusion, 
+ * I guess the most important part to get is the fact that diffusion hide the statistical relationship between the ciphertext and the plain text.
+ * From Wikipedia: “Diffusion means that if we change a single bit of the plaintext, then about half of the bits in the ciphertext should change, 
+ * and similarly, if we change one bit of the ciphertext, then about half of the plaintext bits should change.[5] This is equivalent to the 
+ * expectation that encryption schemes exhibit an avalanche effect.
+ * The purpose of diffusion is to hide the statistical relationship between the ciphertext and the plain text. For example, diffusion ensures 
+ * that any patterns in the plaintext, such as redundant bits, are not apparent in the ciphertext.[3] Block ciphers achieve this by "diffusing" 
+ * the information about the plaintext's structure across the rows and columns of the cipher. ”
+ */
 
 void mixColumn(unsigned char *column);
 void invMixColumn(unsigned char *column);
 unsigned char galois_multiplication(unsigned char a, unsigned char b);
 
-unsigned char multiply(unsigned char a, unsigned char b) {
-    unsigned char result = 0;
-    unsigned char carry;
-
-    for (int i = 0; i < 8; i++) {
-        if (b & 1) {
-            result ^= a;
-        }
-
-        carry = a & 0x80;
-        a <<= 1;
-
-        if (carry) {
-            a ^= 0x1B; // 0x1B is the irreducible polynomial in AES
-        }
-
-        b >>= 1;
-    }
-
-    return result;
-}
-
+/**
+ * Description:
+ * multiplication of 2 bytes(in input) in the Gailos field. It's a bit by bit operation
+ * 
+ */
 unsigned char galois_multiplication(unsigned char a, unsigned char b)
 {
     unsigned char p = 0;
@@ -184,6 +182,14 @@ unsigned char galois_multiplication(unsigned char a, unsigned char b)
     return p;
 }
 
+/**
+ * Description:
+ * the function is taking in input a pointer to an unsigned char(as for any methods in this CA it’s a 16 byte buffer) 
+ * representing a matrix and applying “mixColumn(column);” to it. 
+ * Looking at the implementation, this piece of logic iterates over each column of the state matrix, constructs a column, 
+ * applies mixColumn(column);” function to it, and the updates the state matrix with the result.
+ * 
+ */
 void mix_columns(unsigned char *state)
 {
     int i, j;
@@ -209,6 +215,13 @@ void mix_columns(unsigned char *state)
     }
 }
 
+/**
+ * Description:
+ * this function is called from "mix_columns", goal of this logic is to operate on the column in input(passing a pointer to an unsigned char).
+ * so to the column is applied a series of Galois multiplications and XOR operations 
+ * to each element in the column, then updates the column with the result.
+ * 
+ */
 void mixColumn(unsigned char *column)
 {
     unsigned char cpy[4];
