@@ -390,6 +390,8 @@ void invMixColumn(unsigned char *column)
  * Description:
  * the logic does an itaration byte by byte of the block and apply a xor with the corresponding byte from round_key.
  * This is why it is called "add round key" step.
+ * At high level, the logic is considering a 4x4 matrix and doing a column by column xor, first of the block with first of the round key,
+ * second of the block with second of the round key... etc..
  * 
  * External resource https://crypto.stackexchange.com/questions/22360/what-is-the-importance-of-adding-round-key-in-aes
  * explain the idea of keyed permutation, so the block cipher depends on the round key.
@@ -415,46 +417,64 @@ void add_round_key(unsigned char *block, unsigned char *round_key) {
  * which is a single 128-bit key, it should return a 176-byte
  * vector, containing the 11 round keys one after the other
  */
-/*
-* LD I will take a different approach than in "aes.py". What probably done there is a "RotWord" left shift.
-* instead I want to implement it exactly as explained in lecture by Eoin. End result of UT I will implement must be same
-*/
 
-//LD perform RotWord on cipherKey and update word
-void RotWord(unsigned char *word, const unsigned char cipherKey[], int key_number)
+/**
+ * Description:
+ * this method is called in the body of "expand_key".
+ * The input "block"(unsigned char of 4 bytes) will store the result of the rotation, where the rotation consists in move from first to last position 
+ * + rotate all the other bytes of the LAST column of one of the matrix contained in the "expanded_key[]". 
+ * As an example if the last column of the considered matrix is [1,2,3,4] output will be [2,3,4,1].
+ * As well, as an example of the direct assignments to "block", "block[0]" will get the value of 
+ * the "expanded_key" at index 7 + the number of bytes to consider to extract the right matrix("expanded_key_number"(one of the 11) multiplied the block size(16 bytes)). 
+ * Do this math is necessary because expanded key is 176 bytes long and for each 
+ * execution of "rot_word" is necessary to consider the right chunk of 16bytes, and for each chunk, indexes 3,7,11,15(representing last column of the matrix in a flat array representation).
+ * 
+ * 
+ * Inputs:
+ * this function is getting a pointer to a "block", an "unsigned char" 4 byes long, the "expanded_key" (176 bytes long), and the
+ * "expanded_key_number". For the last parm values go from 0 to 9, so considering from the 1th matrix to 10th to do rotation and in father method to build subsequent keys.
+ * 
+ * Outputs:
+ * there is no return, the function access and modify the memory location of 
+ * "block"(memory pointed by the pointer passed as input parm) 
+ */
+void rot_word(unsigned char *block, const unsigned char expanded_key[], int expanded_key_number)
 {
-    word[0] = cipherKey[7 + (key_number * BLOCK_SIZE)];
-    word[1] = cipherKey[11 + (key_number * BLOCK_SIZE)];
-    word[2] = cipherKey[15 + (key_number * BLOCK_SIZE)];
-    word[3] = cipherKey[3 + (key_number * BLOCK_SIZE)];
+    block[0] = expanded_key[7 + (expanded_key_number * BLOCK_SIZE)];
+    block[1] = expanded_key[11 + (expanded_key_number * BLOCK_SIZE)];
+    block[2] = expanded_key[15 + (expanded_key_number * BLOCK_SIZE)];
+    block[3] = expanded_key[3 + (expanded_key_number * BLOCK_SIZE)];
 }
 
-//LD subbites on the column in isulation
-void SubBytes(unsigned char *word) {
-            for (int i = 0; i < 4; i += 1) {
-                //printf("here-> "); printf("%02x ", word[i]);
-                unsigned char index = word[i]; //LD getting index of s_box for byte "i" I'm looping on
-                word[i] = s_box[index];//LD swap original byte with value from the s_box
-            }
-}
-
-//LD get's in input the column to extract
-void ldExtractColumnFromRcon(int columnNumber, unsigned char *word) {
+/**
+ * Description:
+ * this helper method get's in input the column number to extract from "r_con", an unsigned char of 40 bytes
+ */
+void ldExtractColumnFromRcon(int columnNumber, unsigned char *ret_column) 
+{
     for (int i = 0; i < 4; i++) {
-        word[i] = r_con[(columnNumber - 1) + i * 10];
+        ret_column[i] = r_con[(columnNumber) + i * 10];
     }
 }
 
-//LD code below adapted as well for loop
-void ldExtractColumnFromKey(int columnNumber, unsigned char *key, int key_number, unsigned char *word)
+/**
+ * Description:
+ * this helper is called in the body of "expand_key", it extracts and save in "ret_column" the x "columnNumber" from "expanded_key". 
+ * The column number is calculated considering the input "Key_number" and the block size
+ */
+void ldExtractColumnFromKey(int columnNumber, unsigned char *expanded_key, int key_number, unsigned char *ret_column)
 {
     for (int i = 0; i < 4; i++)
     {
-        word[i] = key[(columnNumber - 1) + i * 4 + (key_number * BLOCK_SIZE)];
+        ret_column[i] = expanded_key[(columnNumber - 1) + i * 4 + (key_number * BLOCK_SIZE)];
     }
 }
 
-//LD XOR in isulation (between 3 inputs)
+
+/**
+ * Description:
+ * this helper method is performing a column by column XOR for the three columns in input represented by three unsigned char 4 bytes long.
+ */
 void XOR(unsigned char *result, unsigned char *a, unsigned char *b, unsigned char *c) {
     for (int i = 0; i < 4; i++) {
         result[i] = a[i] ^ b[i] ^ c[i];
@@ -512,17 +532,23 @@ unsigned char *expand_key(unsigned char *cipher_key)
     for (int i = 0; i < 10; i++)
     {
         // LD ROTWORD
-        RotWord(temp_calc_1, expanded_key, i);
-        // LD SUBBYTES
-        SubBytes(temp_calc_1);
+        printf("ROT WORD: %d\n", i);
+       
+        rot_word(temp_calc_1, expanded_key, i);
+
+        sub_bytes(temp_calc_1);
+
         // LD extract the first column form the key
         ldExtractColumnFromKey(1, expanded_key, i, temp_calc_2);
-        // LD extracting the X number column. Can be reused. At the moment extracting column number one
-        ldExtractColumnFromRcon(i + 1, temp_calc_3);
+
+        // LD extracting the X number column. 
+        ldExtractColumnFromRcon(i, temp_calc_3);
+
         XOR(temp_calc_4, temp_calc_1, temp_calc_2, temp_calc_3);
         
 		// LD MAKING OF COL 2. COL 2 is the XOR of col2 of key in input with col 1 just calculated
         ldExtractColumnFromKey(2, expanded_key, i, temp_columnExtractedFromKey);
+
         XOR_2(temp_col2, temp_columnExtractedFromKey, temp_calc_4);
         
 		// LD MAKING OF COL 3. COL 3 is the XOR of col3 of key in input with col 2 just calculated
@@ -533,27 +559,6 @@ unsigned char *expand_key(unsigned char *cipher_key)
         ldExtractColumnFromKey(4, expanded_key, i, temp_columnExtractedFromKey);
         XOR_2(temp_col4, temp_columnExtractedFromKey, temp_col3);
 			
-        // Assign temporary columns to expanded keys
-        // for (int j = 0; j < 4; j++)
-        // {
-        //     int z = ((i + 1) * BLOCK_SIZE) + (j * 4);
-        //     expanded_key[z] = temp_calc_4[j];
-        // }
-        // for (int j = 0; j < 4; j++)
-        // {
-        //     int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 1;
-        //     expanded_key[z] = temp_col2[j];
-        // }
-        // for (int j = 0; j < 4; j++)
-        // {
-        //     int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 2;
-        //     expanded_key[z] = temp_col3[j];
-        // }
-        // for (int j = 0; j < 4; j++)
-        // {
-        //     int z = ((i + 1) * BLOCK_SIZE) + (j * 4) + 3;
-        //     expanded_key[z] = temp_col4[j];
-        // }
 
         //LD some optinization.. same logic above where "z" is the base index. Moving everything under same FOR
         for (int j = 0; j < 4; j++) {

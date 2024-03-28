@@ -450,6 +450,9 @@ class AesTestMethods(unittest.TestCase):
                 self.assertEqual(expanded_key_bytes, concatenated_bytes_formatted)
 
 
+    #LD below tests of support methods
+                
+                
     def test_RotWord(self):
         expanded_key = [0x2b, 0x28, 0xab, 0x09,
                         0x7e, 0xae, 0xf7, 0xcf,
@@ -466,7 +469,7 @@ class AesTestMethods(unittest.TestCase):
                   0x00,
                   0x00]
         column_array = ctypes.create_string_buffer(bytes(bytearray(column)))
-        rijndael.RotWord(column_array, expanded_key_array, 0)
+        rijndael.rot_word(column_array, expanded_key_array, 0)
         expected_rot_column_array = bytearray([0xcf, 0x4f, 0x3c, 0x09])
 
         self.assertEqual(column_array.raw[:-1], expected_rot_column_array)
@@ -493,32 +496,11 @@ class AesTestMethods(unittest.TestCase):
                   0x00,
                   0x00]
         column_array = ctypes.create_string_buffer(bytes(bytearray(column)))
-        rijndael.RotWord(column_array, expanded_key_array, 1)
+        rijndael.rot_word(column_array, expanded_key_array, 1)
         expected_rot_column_array = bytearray([0x6c, 0x76, 0x05, 0x2a])
       
         self.assertEqual(column_array.raw[:-1], expected_rot_column_array)
        
-
-    def test_SubBytes(self):
-        column = [0xcf,
-                  0x4f,
-                  0x3c,
-                  0x09]
-        column_array = ctypes.create_string_buffer(bytes(bytearray(column)))
-        rijndael.SubBytes(column_array)
-        expected_sub_column_array = bytearray([0x8a, 0x84, 0xeb, 0x01])
-        
-        self.assertEqual(column_array.raw[:-1], expected_sub_column_array)
-        
-
-    def test_SubBytes2(self):
-        column = [0x6c, 0x76, 0x05, 0x2a]
-        column_array = ctypes.create_string_buffer(bytes(bytearray(column)))
-        rijndael.SubBytes(column_array)
-        expected_sub_column_array = bytearray([0x50, 0x38, 0x6b, 0xe5])
-       
-        self.assertEqual(column_array.raw[:-1], expected_sub_column_array)
-        
 
     def test_ldExtractColumnFromKey(self):
         expanded_key = [0x2b, 0x28, 0xab, 0x09,
