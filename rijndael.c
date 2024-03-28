@@ -1,7 +1,21 @@
 /*
  * Luca Filippo D'Angelo - D23125106
- * TODO: Add your name and student number here, along with
- *       a brief description of this code.
+ * 
+ * This code performs AES, a symmetric encryption/decription, core steps for those explained below.
+ * Encryption gets in input plaintext and encryption/decription key, steps below:
+ * "expand_key": the method operates on 128-bit(for this CA) blocks of data and uses a key of 128-bit. The logic implemented expands the original key into a key schedule(11 chunks of 16bytes),
+ * so several round keys are created using key expansion algorithm.
+ * Initial Round: perform "add_round_key", it's a xor between input data and the first round key(first 16 bytes of the expanded key, matching input cipher key).
+ * 9 Rounds: for each round perform a series of transformations ("sub_bytes", "shift_rows", "mix_columns", and "add_round_key") to the data using a different round key generated from "expand_key".
+ * Final Round: perform a series of transformations ("sub_bytes", "shift_rows", and "add_round_key"). We skipping  "mix_columns"
+ * Decription gets in input ciphertext and encryption/decription key, steps below:
+ * "expand_key": same as described in encryption.
+ * Initial Round: perform a series of transformations ("add_round_key", "invert_shift_row", "invert_sub_bytes"). 
+ * So here the logic is performing the exact reverse of what happened in the final round of encryption and using "invert" methods to do that.
+ * 9 Rounds: for each round perform a series of transformations ("add_round_key", "invert_mix_columns", "invert_shift_rows", "invert_sub_bytes")
+ * to the data using a different round key generated from "expand_key". Note: logic perform inverse operations and as per initial round the logis
+ * uses "inverse" methods.
+ * Final Round: perform "add_round_key". Note: very last round for decription is very first round for encryption. 
  */
 
 #include <stdlib.h>
@@ -372,35 +386,28 @@ void invMixColumn(unsigned char *column)
 /*
  * This operation is shared between encryption and decryption
  */
+/**
+ * Description:
+ * the logic does an itaration byte by byte of the block and apply a xor with the corresponding byte from round_key.
+ * This is why it is called "add round key" step.
+ * 
+ * External resource https://crypto.stackexchange.com/questions/22360/what-is-the-importance-of-adding-round-key-in-aes
+ * explain the idea of keyed permutation, so the block cipher depends on the round key.
+ * This method "add_round_key" is called at every round of encryption/decryption, adding security etc..
+
+ * Inputs:
+ * this function is getting a pointer to an "unsigned char", the 16 bytes matrix the logic is boing to transform
+ * and a round_key
+ * 
+ * Outputs:
+ * there is no return, the function access and modify the memory location of 
+ * "block"(memory pointed by the pointer passed as input parm) 
+ */
 void add_round_key(unsigned char *block, unsigned char *round_key) {
-    
-    // printf("START add_round_key\n");
-    // for (int i = 0; i < 4; i++) {
-    //     for (int j = 0; j < 4; j++) {
-    //         printf("%02x ", block[i * 4 + j]);
-    //     }
-    //     printf("\n");
-    // }
-    
-    //     unsigned char dummy_key[16] = {
-    //     0x01, 0x23, 0x45, 0x67,
-    //     0x89, 0xAB, 0xCD, 0xEF,
-    //     0x10, 0x32, 0x54, 0x76,
-    //     0x98, 0xBA, 0xDC, 0xFE
-    // };
     
     for (int i = 0; i < BLOCK_SIZE; i++) {
         block[i] ^= round_key[i];
     }
-
-    // printf("----\n");
-    // for (int i = 0; i < 4; i++) {
-    //     for (int j = 0; j < 4; j++) {
-    //         printf("%02x ", block[i * 4 + j]);
-    //     }
-    //     printf("\n");
-    // }
-    // printf("END add_round_key\n");
 }
 
 /*
