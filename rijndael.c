@@ -473,18 +473,15 @@ void ldExtractColumnFromKey(int columnNumber, unsigned char *expanded_key, int k
 
 /**
  * Description:
- * this helper method is performing a column by column XOR for the three columns in input represented by three unsigned char 4 bytes long.
+ * this helper method is performing a column by column XOR for the columns in input, where each column is represented by an unsigned char 4 bytes long.
+ * I have refactored the old XOR and XOR_2 into this one in order to handle cases both cases with two or three inputs
  */
 void XOR(unsigned char *result, unsigned char *a, unsigned char *b, unsigned char *c) {
     for (int i = 0; i < 4; i++) {
-        result[i] = a[i] ^ b[i] ^ c[i];
-    }
-}
-
-//LD XOR in isulation (between 2 inputs)
-void XOR_2(unsigned char *result, unsigned char *a, unsigned char *b) {
-    for (int i = 0; i < 4; i++) {
         result[i] = a[i] ^ b[i];
+        if (c != NULL) {
+            result[i] ^= c[i];
+        }
     }
 }
 
@@ -549,15 +546,15 @@ unsigned char *expand_key(unsigned char *cipher_key)
 		// LD MAKING OF COL 2. COL 2 is the XOR of col2 of key in input with col 1 just calculated
         ldExtractColumnFromKey(2, expanded_key, i, temp_columnExtractedFromKey);
 
-        XOR_2(temp_col2, temp_columnExtractedFromKey, temp_calc_4);
+        XOR(temp_col2, temp_columnExtractedFromKey, temp_calc_4, NULL);
         
 		// LD MAKING OF COL 3. COL 3 is the XOR of col3 of key in input with col 2 just calculated
         ldExtractColumnFromKey(3, expanded_key, i, temp_columnExtractedFromKey);
-        XOR_2(temp_col3, temp_columnExtractedFromKey, temp_col2);
+        XOR(temp_col3, temp_columnExtractedFromKey, temp_col2, NULL);
         
 		// LD MAKING OF COL 4. COL 4 is the XOR of col4 of key in input with col 3 just calculated
         ldExtractColumnFromKey(4, expanded_key, i, temp_columnExtractedFromKey);
-        XOR_2(temp_col4, temp_columnExtractedFromKey, temp_col3);
+        XOR(temp_col4, temp_columnExtractedFromKey, temp_col3, NULL);
 			
 
         //LD some optinization.. same logic above where "z" is the base index. Moving everything under same FOR
