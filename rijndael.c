@@ -1,19 +1,21 @@
 /*
  * Luca Filippo D'Angelo - D23125106
  * 
- * This code performs AES, a symmetric encryption/decription, core steps for those explained below.
+ * This code performs AES, a symmetric encryption/decription. Core steps for those explained below.
+ * 
  * Encryption gets in input plaintext and encryption/decription key, steps below:
  * "expand_key": the method operates on 128-bit(for this CA) blocks of data and uses a key of 128-bit. The logic implemented expands the original key into a key schedule(11 chunks of 16bytes),
  * so several round keys are created using key expansion algorithm.
  * Initial Round: perform "add_round_key", it's a xor between input data and the first round key(first 16 bytes of the expanded key, matching input cipher key).
  * 9 Rounds: for each round perform a series of transformations ("sub_bytes", "shift_rows", "mix_columns", and "add_round_key") to the data using a different round key generated from "expand_key".
- * Final Round: perform a series of transformations ("sub_bytes", "shift_rows", and "add_round_key"). We skipping  "mix_columns"
+ * Final Round: perform a series of transformations ("sub_bytes", "shift_rows", and "add_round_key"). Filan round skip "mix_columns"
+ * 
  * Decription gets in input ciphertext and encryption/decription key, steps below:
  * "expand_key": same as described in encryption.
  * Initial Round: perform a series of transformations ("add_round_key", "invert_shift_row", "invert_sub_bytes"). 
  * So here the logic is performing the exact reverse of what happened in the final round of encryption and using "invert" methods to do that.
  * 9 Rounds: for each round perform a series of transformations ("add_round_key", "invert_mix_columns", "invert_shift_rows", "invert_sub_bytes")
- * to the data using a different round key generated from "expand_key". Note: logic perform inverse operations and as per initial round the logis
+ * to the data using a different round key generated from "expand_key". Note: logic perform inverse operations and as per initial round the logic
  * uses "inverse" methods.
  * Final Round: perform "add_round_key". Note: very last round for decription is very first round for encryption. 
  */
@@ -23,7 +25,7 @@
 #include <string.h>
 #include "rijndael.h"
 
-
+//LD substitution box. This table of constant values is used in the byte substitution steps. 
 const unsigned char s_box[256] = {
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
     0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
@@ -43,6 +45,7 @@ const unsigned char s_box[256] = {
     0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
 };
 
+//LD inverted substitution box, inverse operations of "s_box". Used in decryption to get back the original plaintext
 const unsigned char inv_s_box[256] = {
     0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB,
     0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87, 0x34, 0x8E, 0x43, 0x44, 0xC4, 0xDE, 0xE9, 0xCB,
@@ -62,6 +65,7 @@ const unsigned char inv_s_box[256] = {
     0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D,
 };
 
+//LD round constant constant values are used into the key expansion method. 
 const unsigned char r_con[40] = {
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -76,15 +80,14 @@ const unsigned char r_con[40] = {
 /**
  * Description:
  * This function covers the sub byte transformation step of the AES algorithm
- * Getting in input a pointer to a 4x4 matrix(in the case of this C implementation 
- * it is an array where rows are represented sequentially).
- * Iterate through each byte in a for loop. For each byte in block 
+ * Getting in input a pointer to a 4x4 matrix(in the case of this C implementation, the matrix is represented by a flat array 
+ * where rows are represented sequentially. As an example the first 4 bytes of the array represent matrix R1C1, R1C2, R1C3, R1C4).
+ * The logic iterates through each byte in a for loop. For each byte in block 
  * gets the value of the byte "i" and assign to “index”, 
  * then look for that value in s_box(substitution box), then just replace the 
  * original byte in the input “block” with the value from the s_box.
  * 
- * It’s a substitution to add confusion to the data, as I understand it should be 
- * harder to reverse engineer.
+ * It’s a substitution to add confusion to the data, as I understand it should be harder to reverse engineer.
  * 
  * Inputs:
  * this function is getting a pointer to an "unsigned char"
@@ -104,14 +107,14 @@ void sub_bytes(unsigned char *block) {
  * Description:
  * this function gets in input a pointer to a 4x4 matrix(in the case of this C implementation 
  * it is an array where rows are represented sequentially)and does a circular shift of bytes.
- * The pattern is to unchange row one, row two does left shift of one byte,  row three does 
- * left shift of two bytes, , row four does left shift of three bytes.
+ * The pattern is to unchange row one, row two does left shift of one byte, row three does 
+ * left shift of two bytes, row four does left shift of three bytes.
  * In the code below I did simply use indexes of the input block to implement the assignments.
+ * 
  * “ In this way, each column of the output state of the ShiftRows step is composed of bytes from each column of the input state. “ 
  * source: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
  * 
- * The scope of this step is then to create “diffusion”, spreading each byte in input to the 
- * entire block in output.
+ * The scope of this step is then to create “diffusion”, spreading each byte in input to the entire block in output.
 
  * Inputs:
  * this function is getting a pointer to an "unsigned char"
@@ -158,7 +161,8 @@ void shift_rows(unsigned char *block) {
  * the mix of the columns is one of the steps of encryption(entry point mix_columns)/decription(entry point invert_mix_columns). 
  * What this step basically does is to multiply each column of the input block(getting in input a pointer to an unsigned char) 
  * with a fixed matrix(Gailos field). 
- * The goal of this step is diffusion. There is a great explanation here https://en.wikipedia.org/wiki/Confusion_and_diffusion, 
+ * The goal of this step is diffusion. There is a great explanation here https://en.wikipedia.org/wiki/Confusion_and_diffusion.
+ * 
  * I guess the most important part to get is the fact that diffusion hide the statistical relationship between the ciphertext and the plain text.
  * From Wikipedia: “Diffusion means that if we change a single bit of the plaintext, then about half of the bits in the ciphertext should change, 
  * and similarly, if we change one bit of the ciphertext, then about half of the plaintext bits should change.[5] This is equivalent to the 
@@ -320,7 +324,7 @@ void invert_shift_rows(unsigned char *block) {
 
 /**
  * Description:
- * similarly to any methods in this "decriptiong" methods section, "invert_mix_columns" perform exactly the opposite of
+ * similarly to any methods in this "decripting" methods section, "invert_mix_columns" perform exactly the opposite of
  * "mix_columns". It's the inverse process.
  * Iterative processes are pretty similar if not identical to what described in summary of function "mix_columns"
  */
@@ -386,6 +390,7 @@ void invMixColumn(unsigned char *column)
 /*
  * This operation is shared between encryption and decryption
  */
+
 /**
  * Description:
  * the logic does an itaration byte by byte of the block and apply a xor with the corresponding byte from round_key.
@@ -398,7 +403,7 @@ void invMixColumn(unsigned char *column)
  * This method "add_round_key" is called at every round of encryption/decryption, adding security etc..
 
  * Inputs:
- * this function is getting a pointer to an "unsigned char", the 16 bytes matrix the logic is boing to transform
+ * this function is getting a pointer to an "unsigned char", the 16 bytes matrix the logic is going to transform
  * and a round_key
  * 
  * Outputs:
@@ -421,9 +426,10 @@ void add_round_key(unsigned char *block, unsigned char *round_key) {
 /**
  * Description:
  * this method is called in the body of "expand_key".
- * The input "block"(unsigned char of 4 bytes) will store the result of the rotation, where the rotation consists in move from first to last position 
+ * The input "block"(unsigned char of 4 bytes) will store the result of the rotation, where the rotation consists in moving from first to last position 
  * + rotate all the other bytes of the LAST column of one of the matrix contained in the "expanded_key[]". 
  * As an example if the last column of the considered matrix is [1,2,3,4] output will be [2,3,4,1].
+ * 
  * As well, as an example of the direct assignments to "block", "block[0]" will get the value of 
  * the "expanded_key" at index 7 + the number of bytes to consider to extract the right matrix("expanded_key_number"(one of the 11) multiplied the block size(16 bytes)). 
  * Do this math is necessary because expanded key is 176 bytes long and for each 
@@ -431,7 +437,7 @@ void add_round_key(unsigned char *block, unsigned char *round_key) {
  * 
  * 
  * Inputs:
- * this function is getting a pointer to a "block", an "unsigned char" 4 byes long, the "expanded_key" (176 bytes long), and the
+ * this function is getting a pointer to a "block", an "unsigned char" 4 bytes long, the "expanded_key" (176 bytes long), and the
  * "expanded_key_number". For the last parm values go from 0 to 9, so considering from the 1th matrix to 10th to do rotation and in father method to build subsequent keys.
  * 
  * Outputs:
@@ -446,27 +452,29 @@ void rot_word(unsigned char *block, const unsigned char expanded_key[], int expa
     block[3] = expanded_key[3 + (expanded_key_number * BLOCK_SIZE)];
 }
 
+
 /**
  * Description:
  * this helper method get's in input the column number to extract from "r_con", an unsigned char of 40 bytes
  */
-void ldExtractColumnFromRcon(int columnNumber, unsigned char *updating) 
+void ldExtractColumnFromRcon(int columnNumber, unsigned char *extracted_column) 
 {
     for (int i = 0; i < 4; i++) {
-        updating[i] = r_con[(columnNumber) + i * 10];
+        extracted_column[i] = r_con[(columnNumber) + i * 10];
     }
 }
 
+
 /**
  * Description:
- * this helper is called in the body of "expand_key", it extracts and save in "ret_column" the x "columnNumber" from "expanded_key". 
- * The column number is calculated considering the input "Key_number" and the block size
+ * this helper is called in the body of "expand_key", it extracts and save in "extracted_column" the x "column" from "expanded_key". 
+ * The column to be copied is detected considering the input "Key_number" and the block size
  */
-void ldExtractColumnFromKey(int columnNumber, unsigned char *expanded_key, int key_number, unsigned char *updating)
+void ldExtractColumnFromKey(int columnNumber, unsigned char *expanded_key, int key_number, unsigned char *extracted_column)
 {
     for (int i = 0; i < 4; i++)
     {
-        updating[i] = expanded_key[(columnNumber - 1) + i * 4 + (key_number * BLOCK_SIZE)];
+        extracted_column[i] = expanded_key[(columnNumber - 1) + i * 4 + (key_number * BLOCK_SIZE)];
     }
 }
 
@@ -488,8 +496,10 @@ void XOR(unsigned char *updating, unsigned char *a, unsigned char *b, unsigned c
 /**
  * Description:
  * this method contains the logic to implement the key schedule/expansion step of the AES algorithm.
+ * 
  * I have tried to implement the logic and steps of the key schedule following as close as possible the 
  * "guideline" https://formaestudio.com/rijndaelinspector/archivos/Rijndael_Animation_v4_eng-html5.html
+ * 
  * The process expands the original cipher key into a set of round keys, used in the main encryption/decryption process.
  * So at each round a new key is derivated/built(mix of transformations happening) from the previous round key.
  * Each round of encryption/decryption will use an unique key.
@@ -539,7 +549,7 @@ unsigned char *expand_key(unsigned char *cipher_key)
         ldExtractColumnFromRcon(i, extracted_column_rcon_at_index_i);
 
         //LD performing XOR between "rot_word_computed, extracted_column_from_expanded_key_at_index_i, extracted_column_rcon_at_index_i"
-        //calculated in previous steps. The result will be the first column of the new expanded key 
+        //calculated above. The result will be the first column of the new expanded key 
         XOR(temp_new_key_col_one, rot_word_computed, extracted_column_from_expanded_key_at_index_i, extracted_column_rcon_at_index_i);
         
 		//LD extract the second column from previous round key
@@ -568,9 +578,9 @@ unsigned char *expand_key(unsigned char *cipher_key)
             expanded_key[z + 2] = temp_new_key_col_three[j];
             expanded_key[z + 3] = temp_new_key_col_four[j];
         }
-
     }
 
+    //LD at the end returning the calculated/built "expanded_key"
     return expanded_key;
 }
 
@@ -579,24 +589,31 @@ unsigned char *expand_key(unsigned char *cipher_key)
  * The implementations of the functions declared in the
  * header file should go here
  */
+/**
+ * Encription:
+ * putting together all the AES steps to perform the encryption:
+ * initial round: add round key
+ * 9 rounds: sub bytes -> shift rows -> mix columns -> add round keys
+ * final round: sub bytes -> shift rows -> add round key
+ *
+ * Code is pretty straight forward, very little comments of the plumbing in the code
+ * 
+ * Inputs:
+ * this function is getting a pointer to two unsigned char, "key"(encryption/decryption key) and "plaintext". Both 16 byes long.
+ * 
+ * Outputs:
+ * this function returns a 16bytes long ciphertext
+ */
 unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
 
-    //LD doing a copy of plaintext otherwise due to the current structure of main, I will end up  
+    //LD doing a memory copy of plaintext otherwise due to the current structure of main, I will end up  
     //printing ciphertext values instead of plaintext
-    unsigned char *temp_plaintext = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
-    if (temp_plaintext == NULL) {
-        fprintf(stderr, "LD temp_plaintext memory allocation issues\n");
+    unsigned char *temp_ciphertext = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
+    if (temp_ciphertext == NULL) {
+        fprintf(stderr, "LD temp_ciphertext memory allocation issues\n");
         return NULL;
     }
-    memcpy(temp_plaintext, plaintext, BLOCK_SIZE);
-
-    // printf("--- \n");
-    // printf("--- LD PLAINTEXT aes_encrypt_block:\n");
-    // for (int i = 0; i < 16; i++) {
-    //     printf("%02X ", temp_plaintext[i]); 
-    //     if ((i + 1) % 4 == 0)
-    //         printf("\n");
-    // }
+    memcpy(temp_ciphertext, plaintext, BLOCK_SIZE);
 
     unsigned char *round_keys = expand_key(key);
     if (round_keys == NULL) {
@@ -604,89 +621,77 @@ unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
         return NULL;
     }
 
-    add_round_key(temp_plaintext, round_keys);
+    add_round_key(temp_ciphertext, round_keys);
 
     for (int round = 1; round < 10; ++round) {
-        sub_bytes(temp_plaintext);
-        shift_rows(temp_plaintext);
-        mix_columns(temp_plaintext);
-        add_round_key(temp_plaintext, round_keys + round * BLOCK_SIZE); //LD advancing the pointer by blocksize
+        sub_bytes(temp_ciphertext);
+        shift_rows(temp_ciphertext);
+        mix_columns(temp_ciphertext);
+        add_round_key(temp_ciphertext, round_keys + round * BLOCK_SIZE); //LD advancing the pointer by blocksize
     }
 
-    sub_bytes(temp_plaintext);
-    shift_rows(temp_plaintext);
-    add_round_key(temp_plaintext, round_keys + 10 * BLOCK_SIZE);
+    sub_bytes(temp_ciphertext);
+    shift_rows(temp_ciphertext);
+    add_round_key(temp_ciphertext, round_keys + 10 * BLOCK_SIZE);
 
     free(round_keys); //LD release allocated memory
 
-    // printf("--- \n");
-    // printf("--- LD ENCRIPTED aes_encrypt_block:\n");
-    // for (int i = 0; i < 16; i++) {
-    //     printf("%02X ", temp_plaintext[i]); 
-    //     if ((i + 1) % 4 == 0)
-    //         printf("\n");
-    // }
-    
-    //printf("LD EXECUTED aes_encrypt_block \n");
-    return temp_plaintext;
+    return temp_ciphertext;
 }
 
+/**
+ * Description:
+ * putting together all the AES steps to perform the decryption. 
+ * Steps are all the way around than encryption and "inverse" methods are used:
+ * initial round: add round key-> invert shift rows -> invert sub bytes 
+ * 9 rounds: add round keys -> invert mix columns -> invert shift rows -> invert sub bytes 
+ * final round: add round key
+ *
+ * Code is pretty straight forward as for encryption, very little comments of the plumbing in the code
+ * 
+ * Inputs:
+ * this function is getting a pointer to two unsigned char, "key"(encryption/decryption key) and "ciphertext". Both 16 byes long.
+ * 
+ * Outputs:
+ * this function returns a 16bytes long recovered plaintext
+ */
 unsigned char *aes_decrypt_block(unsigned char *ciphertext, unsigned char *key) {
 
-    //LD allocating a slot of memory for the ciphertext generation. The pointer to ciphertext in
-    //input to this function. Since ciphertext is modified during decryption in main, 
-    //once the eoin's code in printing ciphertext after decryption, the sequence will print the decrypted plaintext, not the ciphertext.
+    //LD allocating a slot of memory for recovered_plaintext. 
+    //once main is printing "ciphertext" before "recovered_plaintext", I can't override chipertext values but instead
+    // I need to memcopy input "ciphertext" into the support variable "recovered_plaintext".
+    // Doing that the main sequence of code will print the decrypted plaintext, not the ciphertext.
     // so to output the expected behaviour without touching main I needed to do a copy before decription.
-    unsigned char *temp_ciphertext = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
-    if (temp_ciphertext == NULL) {
+    unsigned char *recovered_plaintext = (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
+    if (recovered_plaintext == NULL) {
         fprintf(stderr, "Memory allocation failed\n");
         return NULL;
     }
-    memcpy(temp_ciphertext, ciphertext, BLOCK_SIZE);
-
-    // printf("--- \n");
-    // printf("--- LD CIPHERTEXT aes_decrypt_block:\n");
-    // for (int i = 0; i < 16; i++) {
-    //     printf("%02X ", temp_ciphertext[i]); 
-    //     if ((i + 1) % 4 == 0)
-    //         printf("\n");
-    // }
+    memcpy(recovered_plaintext, ciphertext, BLOCK_SIZE);
 
     //LD it's exactly all the way around!
 
     unsigned char *round_keys = expand_key(key);
         if (round_keys == NULL) {
         //LD free memory
-        free(temp_ciphertext);
+        free(recovered_plaintext);
         return NULL;
     }
 
-    add_round_key(temp_ciphertext, round_keys + 10 * BLOCK_SIZE);
-    invert_shift_rows(temp_ciphertext);
-    invert_sub_bytes(temp_ciphertext);
+    add_round_key(recovered_plaintext, round_keys + 10 * BLOCK_SIZE);
+    invert_shift_rows(recovered_plaintext);
+    invert_sub_bytes(recovered_plaintext);
 
     for (int round = 9; round > 0; --round) {
-        add_round_key(temp_ciphertext, round_keys + round * BLOCK_SIZE);
-        invert_mix_columns(temp_ciphertext);
-        invert_shift_rows(temp_ciphertext);
-        invert_sub_bytes(temp_ciphertext);
+        add_round_key(recovered_plaintext, round_keys + round * BLOCK_SIZE);
+        invert_mix_columns(recovered_plaintext);
+        invert_shift_rows(recovered_plaintext);
+        invert_sub_bytes(recovered_plaintext);
     }
 
-    add_round_key(temp_ciphertext, round_keys);
+    add_round_key(recovered_plaintext, round_keys);
 
     free(round_keys);
-
-    // printf("--- \n");
-    // printf("--- LD DECRIPTED aes_decrypt_block:\n");
-    // for (int i = 0; i < 16; i++) {
-    //     printf("%02X ", ciphertext_cpy[i]); 
-    //     if ((i + 1) % 4 == 0)
-    //         printf("\n");
-    // }
-
-    // printf("--- \n");
-    // printf("--- LD EXECUTED aes_decrypt_block \n");
-    // printf("--- \n");
     
-    return temp_ciphertext;
+    return recovered_plaintext;
 }

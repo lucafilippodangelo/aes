@@ -20,6 +20,7 @@ rijndael.aes_decrypt_block.restype = ctypes.POINTER(ctypes.c_ubyte)
 def generate_random_plaintext(length):
     return bytearray([random.randint(0, 255) for _ in range(length)])
 
+#LD columns rotated counterclockwise 90 degrees 
 def turnMatrixLd(plaintext):
     #ogni 4 bytes e' una colonna(visualizzata) ruotata in senso antiorario di 90 gradi
     indices = [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15] #LD switch of indexes to turn current ROW_1 to COL_1 etc..
@@ -40,7 +41,6 @@ class AesTestMethods(unittest.TestCase):
     # CONTENT:
     # "test_sub_bytes" -> testing the C function
     # "test_both_sub_bytes" -> testing both C and Python with 3 random input and asserting on equal results
-    #TO UNCOMMENT
     ############################################################################################################
 
     def test_sub_bytes(self):
@@ -64,10 +64,7 @@ class AesTestMethods(unittest.TestCase):
 
             plaintext_matrix = bytes2matrix(plaintext) #LD convert same input plaintext to a matrix
             sub_bytes(plaintext_matrix)  #LD now call sub_bytes from aes.py
-            #print("sub_bytes P:", expected_output_python)
-            #for row in expected_output_python:
-                #print([hex(byte) for byte in row])
-
+          
             #TO UNCOMMENT print(f"--- LOOP n. {num_attempts} with hexadecimal: {[hex(byte) for byte in plaintext]}")
             self.assertEqual(expected_output_c, plaintext_matrix)
 
@@ -76,8 +73,7 @@ class AesTestMethods(unittest.TestCase):
     ### invert_sub_bytes ###
     # CONTENT:  
     # "test_invert_sub_bytes" -> testing the C function
-    # "test_both_invert_sub_bytes" -> testing both C and Python with 3 random input and asserting on equal results    
-    #TO UNCOMMENT    
+    # "test_both_invert_sub_bytes" -> testing both C and Python with 3 random input and asserting on equal results      
     ############################################################################################################
 
     def test_invert_sub_bytes(self):
@@ -101,9 +97,6 @@ class AesTestMethods(unittest.TestCase):
            
             plaintext_matrix = bytes2matrix(plaintext) #LD convert same input plaintext to a matrix
             sub_bytes(plaintext_matrix)  #LD now call sub_bytes from aes.py
-            #print("sub_bytes P:", expected_output_python)
-            #for row in expected_output_python:
-                #print([hex(byte) for byte in row])
 
             #TO UNCOMMENT print(f"--- LOOP invert sub bytes both n. {num_attempts} with hexadecimal: {[hex(byte) for byte in plaintext]}")
             self.assertEqual(expected_output_c, plaintext_matrix)
@@ -142,10 +135,6 @@ class AesTestMethods(unittest.TestCase):
             block = ctypes.create_string_buffer(bytes(plaintext))
             rijndael.shift_rows(block)#LD will call the shift_rows function from C implementation
             expected_output_c = bytes2matrix(block.raw[:-1])#LD Convert the result to a matrix because the method in python gets and returns a matrix
-            #LD looks like print by default display bytes in decimal
-            # print(f"C return")
-            # for row in expected_output_c:
-            #     print([hex(byte) for byte in row])
 
             #LD test id same function in python behave the same
             #Eoin explanation:  shift columns instead of a shift rows: the blocks are being stored column-wise rather than row-wise
@@ -153,10 +142,6 @@ class AesTestMethods(unittest.TestCase):
             expected_matrix = self.transpose(plaintext_matrix)
             shift_rows(expected_matrix)
             expected_output_python = self.transpose(expected_matrix)
-
-            # print(f"P return")
-            # for row in expected_output_python:
-            #     print([hex(byte) for byte in row])
 
             #TO UNCOMMENT print(f"--- LOOP test_both_shift_rows n. {num_attempts} with hexadecimal: {[hex(byte) for byte in plaintext]}")
             self.assertEqual(expected_output_c, expected_output_python)
@@ -251,9 +236,6 @@ class AesTestMethods(unittest.TestCase):
             rijndael.mix_columns(block)#LD C implementation
 
             expected_output_c = block.raw[:-1]
-            # print(f"C return")
-            # for row in expected_output_c:
-            #     print([hex(byte) for byte in row])
 
             #LD test id same function in python behave the same
             flipped = turnMatrixLd(plaintext)
